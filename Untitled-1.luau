@@ -1,114 +1,142 @@
--- 🌟 Tower Defense Auto Script UI - Minimal with Macro + Wave Select
+-- 🌿 Macro UI + Auto Play Again for Tower Defense
 
--- 💥 Destroy previous UI if exists
-pcall(function()
-    game.CoreGui:FindFirstChild("TowerAutoUI"):Destroy()
-end)
+pcall(function() game.CoreGui:FindFirstChild("MacroUI"):Destroy() end)
 
-local Players = game:GetService("Players")
-local LocalPlayer = Players.LocalPlayer
-local TweenService = game:GetService("TweenService")
+local UIS = game:GetService("UserInputService")
+local Tween = game:GetService("TweenService")
 
--- 📦 GUI Setup
+-- GUI สร้าง
 local gui = Instance.new("ScreenGui", game.CoreGui)
-gui.Name = "TowerAutoUI"
-gui.ResetOnSpawn = false
+gui.Name = "MacroUI"
 
-local frame = Instance.new("Frame", gui)
-frame.Size = UDim2.new(0, 280, 0, 240)
-frame.Position = UDim2.new(0, 20, 0.5, -120)
-frame.BackgroundColor3 = Color3.fromRGB(30, 30, 35)
-frame.BorderSizePixel = 0
-frame.Active = true
-frame.Draggable = true
-Instance.new("UICorner", frame)
+local win = Instance.new("Frame", gui)
+win.Size = UDim2.new(0, 380, 0, 200)
+win.Position = UDim2.new(0.5, -190, 0.5, -100)
+win.BackgroundColor3 = Color3.fromRGB(30, 30, 40)
+win.BorderSizePixel = 0
+local corner = Instance.new("UICorner", win)
 
--- 🧾 Title
-local title = Instance.new("TextLabel", frame)
+-- Title / Mode Selector
+local title = Instance.new("TextLabel", win)
 title.Size = UDim2.new(1, 0, 0, 30)
 title.BackgroundTransparency = 1
-title.Text = "🌿 Tower Macro"
 title.Font = Enum.Font.GothamBold
 title.TextSize = 16
-title.TextColor3 = Color3.fromRGB(255, 255, 255)
+title.TextColor3 = Color3.new(1,1,1)
+title.Text = "Mode: Basic"
 title.TextXAlignment = Enum.TextXAlignment.Left
-title.Position = UDim2.new(0, 10, 0, 0)
 
--- 🔽 Select Mode Dropdown (Dummy)
-local modeDropdown = Instance.new("TextButton", frame)
-modeDropdown.Size = UDim2.new(1, -20, 0, 30)
-modeDropdown.Position = UDim2.new(0, 10, 0, 40)
-modeDropdown.Text = "Select Mode: Easy"
-modeDropdown.BackgroundColor3 = Color3.fromRGB(50, 50, 60)
-modeDropdown.TextColor3 = Color3.new(1, 1, 1)
-modeDropdown.Font = Enum.Font.Gotham
-modeDropdown.TextSize = 14
-Instance.new("UICorner", modeDropdown)
+-- Dropdown
+local modes = {"Easy","Normal","Hard","Insane"}
+local currentMode = modes[1]
+local dropdown = Instance.new("TextButton", win)
+dropdown.Size = UDim2.new(0, 120, 0, 24)
+dropdown.Position = UDim2.new(0, 10, 0, 34)
+dropdown.BackgroundColor3 = Color3.fromRGB(45,45,55)
+dropdown.Font = Enum.Font.Gotham
+dropdown.TextSize = 14
+dropdown.TextColor3 = Color3.new(1,1,1)
+dropdown.Text = currentMode
+Instance.new("UICorner", dropdown)
 
--- 🔁 Toggle Auto Play Again
-local autoPlay = Instance.new("TextButton", frame)
-autoPlay.Size = UDim2.new(1, -20, 0, 30)
-autoPlay.Position = UDim2.new(0, 10, 0, 80)
-autoPlay.BackgroundColor3 = Color3.fromRGB(45, 55, 65)
-autoPlay.TextColor3 = Color3.new(1,1,1)
-autoPlay.Font = Enum.Font.Gotham
-autoPlay.TextSize = 14
-autoPlay.Text = "[✔] Auto Play Again"
-Instance.new("UICorner", autoPlay)
+local listOpen = false
+local listFrame = Instance.new("Frame", win)
+listFrame.Position = UDim2.new(0,10,0,60)
+listFrame.Size = UDim2.new(0,120,0,0)
+listFrame.BackgroundColor3 = Color3.fromRGB(45,45,55)
+Instance.new("UICorner", listFrame)
 
--- 📹 Macro Buttons
-local recordBtn = Instance.new("TextButton", frame)
-recordBtn.Size = UDim2.new(1, -20, 0, 30)
-recordBtn.Position = UDim2.new(0, 10, 0, 120)
-recordBtn.BackgroundColor3 = Color3.fromRGB(60, 30, 30)
-recordBtn.Text = "⏺️ Record"
-recordBtn.TextColor3 = Color3.new(1, 1, 1)
-recordBtn.Font = Enum.Font.Gotham
-recordBtn.TextSize = 14
-Instance.new("UICorner", recordBtn)
+dropdown.MouseButton1Click:Connect(function()
+    listOpen = not listOpen
+    listFrame:TweenSize(UDim2.new(0,120,0,listOpen and #modes*24 or 0),"Out","Quad",0.2,true)
+end)
 
-local playBtn = Instance.new("TextButton", frame)
-playBtn.Size = UDim2.new(1, -20, 0, 30)
-playBtn.Position = UDim2.new(0, 10, 0, 160)
-playBtn.BackgroundColor3 = Color3.fromRGB(30, 60, 30)
-playBtn.Text = "▶️ Start Macro"
-playBtn.TextColor3 = Color3.new(1, 1, 1)
-playBtn.Font = Enum.Font.Gotham
-playBtn.TextSize = 14
-Instance.new("UICorner", playBtn)
+for i, m in ipairs(modes) do
+    local btn = Instance.new("TextButton", listFrame)
+    btn.Size = UDim2.new(1,0,0,24)
+    btn.Position = UDim2.new(0,0,0,(i-1)*24)
+    btn.BackgroundColor3 = Color3.fromRGB(40,40,50)
+    btn.Font = Enum.Font.Gotham
+    btn.TextSize = 14
+    btn.TextColor3 = Color3.new(1,1,1)
+    btn.Text = m
+    Instance.new("UICorner", btn)
+    btn.MouseButton1Click:Connect(function()
+        currentMode = m
+        dropdown.Text = m
+        title.Text = "Mode: " .. m
+        listOpen = false
+        listFrame:TweenSize(UDim2.new(0,120,0,0),"Out","Quad",0.2,true)
+    end)
+end
 
-local playbackBtn = Instance.new("TextButton", frame)
-playbackBtn.Size = UDim2.new(1, -20, 0, 30)
-playbackBtn.Position = UDim2.new(0, 10, 0, 200)
-playbackBtn.BackgroundColor3 = Color3.fromRGB(40, 40, 70)
-playbackBtn.Text = "🔁 Playback Macro"
-playbackBtn.TextColor3 = Color3.new(1, 1, 1)
-playbackBtn.Font = Enum.Font.Gotham
-playbackBtn.TextSize = 14
-Instance.new("UICorner", playbackBtn)
-
--- 💬 Function Hooks (Stub only)
+-- ฟังก์ชัน Placeholder
+local isAuto = false
+local macroData = {}
 local isRecording = false
-recordBtn.MouseButton1Click:Connect(function()
-    isRecording = not isRecording
-    recordBtn.Text = isRecording and "⏹️ Stop Recording" or "⏺️ Record"
-    print("[Macro] Recording:", isRecording)
+
+local function autoPlayAgain()
+    print("✅ Auto Play Again triggered")
+    -- TODO: ใช้ fireclickdetector หรือ firesignal
+end
+
+local function playbackMacro()
+    print("🔁 Playback Macro:", macroData)
+    -- TODO: วางและอัปเกรตตาม macroData
+end
+
+-- ปุ่ม UI
+local btns = {
+    {icon="✔", text="Auto Play", func=function()
+        isAuto = not isAuto
+        print("Auto Play = ", isAuto)
+    end},
+    {icon="▶️", text="Start Macro", func=function()
+        macroData = {} print("Macro cleared, ready to record")
+    end},
+    {icon="⏺️", text="Record", func=function()
+        isRecording = not isRecording
+        print("Recording = ", isRecording)
+    end},
+    {icon="🔁", text="Playback", func=playbackMacro},
+}
+
+for i, info in ipairs(btns) do
+    local b = Instance.new("TextButton", win)
+    b.Size = UDim2.new(0, 160, 0, 28)
+    b.Position = UDim2.new(0,10,0,80+(i-1)*34)
+    b.BackgroundColor3 = Color3.fromRGB(50,50,60)
+    b.Font = Enum.Font.Gotham
+    b.TextSize = 14
+    b.TextColor3 = Color3.new(1,1,1)
+    b.Text = info.icon.." "..info.text
+    Instance.new("UICorner", b)
+    b.MouseButton1Click:Connect(info.func)
+end
+
+-- ปุ่มย่อ/ลาก ได้ง่าย
+local dragging, dragStart, winPos
+win.Active = true; win.Draggable = true
+
+win.InputBegan:Connect(function(input)
+    if input.UserInputType==Enum.UserInputType.MouseButton1 then
+        dragging=true; dragStart=input.Position; winPos=win.Position
+        input.Changed:Connect(function() if input.UserInputState==Enum.UserInputState.End then dragging=false end)
+    end
+end)
+UIS.InputChanged:Connect(function(input)
+    if dragging and input.UserInputType==Enum.UserInputType.MouseMovement then
+        local delta = input.Position-dragStart
+        win.Position = UDim2.new(winPos.X.Scale, winPos.X.Offset+delta.X, winPos.Y.Scale, winPos.Y.Offset+delta.Y)
+    end
 end)
 
-playBtn.MouseButton1Click:Connect(function()
-    print("[Macro] Playing...")
-end)
-
-playbackBtn.MouseButton1Click:Connect(function()
-    print("[Macro] Playback Loaded")
-end)
-
-autoPlay.MouseButton1Click:Connect(function()
-    print("[AutoPlayAgain] Toggled")
-end)
-
-modeDropdown.MouseButton1Click:Connect(function()
-    print("[SelectMode] Open Dropdown (not implemented)")
+-- 🧠 ตัวอย่างเรียก Auto Play และ Recording ตามเงื่อนไข
+game:GetService("RunService").RenderStepped:Connect(function()
+    if isAuto then autoPlayAgain() end
+    if isRecording then
+        -- เก็บ macroData เช่น {time=os.clock(), action="place", pos=CFrame.new(...)}
+    end
 end)
 
 
