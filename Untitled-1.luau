@@ -114,7 +114,9 @@ Instance.new("UICorner", iconBtn)
 
 -- 🧠 Animation Logic
 local function fadeOut(frame)
-	TweenService:Create(frame, TweenInfo.new(0.3), {Size = UDim2.new(0, 0, 0, 0), Transparency = 1}):Play()
+	TweenService:Create(frame, TweenInfo.new(0.3), {
+		Size = UDim2.new(0, 0, 0, 0)
+	}):Play()
 	wait(0.3)
 	frame.Visible = false
 end
@@ -122,8 +124,8 @@ end
 local function fadeIn(frame)
 	frame.Visible = true
 	frame.Size = UDim2.new(0, 500, 0, 300)
-	TweenService:Create(frame, TweenInfo.new(0.3), {Transparency = 0}):Play()
 end
+
 
 minimizeBtn.MouseButton1Click:Connect(function()
 	TweenService:Create(mainFrame, TweenInfo.new(0.2), {
