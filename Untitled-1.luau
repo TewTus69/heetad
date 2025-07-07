@@ -36,7 +36,3 @@ InfoSection:NewLabel("สร้างโดยไออ้วง และ เ�
 -- 🌐 External Script Loader
 loadstring(game:HttpGet("https://raw.githubusercontent.com/TewTus69/heetad/main/Untitled-1.luau"))()
 
-
--- 🌐 External Script Loader
-loadstring(game:HttpGet("https://raw.githubusercontent.com/TewTus69/heetad/main/Untitled-1.luau"))()
-
