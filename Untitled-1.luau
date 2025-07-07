@@ -1,102 +1,59 @@
+-- ✅ Destroy existing UI if present
 pcall(function() game.CoreGui:FindFirstChild("MacroUI"):Destroy() end)
 
+-- ⚙️ Services
 local UIS = game:GetService("UserInputService")
 local RS = game:GetService("RunService")
 local Players = game:GetService("Players")
 local LP = Players.LocalPlayer
 
-local gui = Instance.new("ScreenGui", game.CoreGui)
-gui.Name = "MacroUI"
-gui.ResetOnSpawn = false
+-- 📦 Kavo UI Framework (from GitHub)
+local Library = loadstring(game:HttpGet("https://raw.githubusercontent.com/xHeptc/Kavo-UI-Library/main/source.lua"))()
+local Window = Library.CreateLib("Macro Controller", "Midnight")
 
-local win = Instance.new("Frame", gui)
-win.Size = UDim2.new(0, 400, 0, 300)
-win.Position = UDim2.new(0.5, -200, 0.5, -150)
-win.BackgroundColor3 = Color3.fromRGB(30, 30, 40)
-win.BorderSizePixel = 0
-win.Active = true
-win.Draggable = true
-Instance.new("UICorner", win)
+-- 🌐 Tabs and Sections
+local MainTab = Window:NewTab("Main")
+local MainSection = MainTab:NewSection("Macro Controls")
 
-local title = Instance.new("TextLabel", win)
-title.Size = UDim2.new(1, -20, 0, 30)
-title.Position = UDim2.new(0, 10, 0, 0)
-title.BackgroundTransparency = 1
-title.Font = Enum.Font.GothamBold
-title.TextSize = 16
-title.TextColor3 = Color3.new(1,1,1)
-title.TextXAlignment = Enum.TextXAlignment.Left
-title.Text = "Macro Controller"
-
+-- 📌 Variables
 local modes = {"Easy", "Normal", "Hard", "Insane"}
 local currentMode = modes[1]
-
-local dropdown = Instance.new("TextButton")
-dropdown.Parent = win
-dropdown.Size = UDim2.new(0, 140, 0, 26)
-dropdown.Position = UDim2.new(0, 10, 0, 40)
-dropdown.BackgroundColor3 = Color3.fromRGB(50, 50, 60)
-dropdown.Text = "Mode: " .. currentMode
-dropdown.TextColor3 = Color3.new(1, 1, 1)
-dropdown.Font = Enum.Font.Gotham
-dropdown.TextSize = 14
-Instance.new("UICorner", dropdown)
-
-local listFrame = Instance.new("Frame")
-listFrame.Size = UDim2.new(0, 140, 0, 0)
-listFrame.Position = dropdown.AbsolutePosition + Vector2.new(0, dropdown.AbsoluteSize.Y)
-listFrame.BackgroundColor3 = Color3.fromRGB(50, 50, 60)
-listFrame.ClipsDescendants = true
-listFrame.Visible = false
-listFrame.ZIndex = 10
-listFrame.Parent = gui
-Instance.new("UICorner", listFrame)
-
-local listOpen = false
-
--- Fix position when GUI moves
-game:GetService("RunService").RenderStepped:Connect(function()
-    if listOpen then
-        listFrame.Position = dropdown.AbsolutePosition + Vector2.new(0, dropdown.AbsoluteSize.Y)
-    end
-end)
-
-dropdown.MouseButton1Click:Connect(function()
-    listOpen = not listOpen
-    listFrame.Visible = true
-    listFrame:TweenSize(UDim2.new(0, 140, 0, listOpen and (#modes * 24) or 0), "Out", "Quad", 0.2, true)
-
-    if not listOpen then
-        task.delay(0.2, function()
-            listFrame.Visible = false
-        end)
-    end
-end)
-
-for i, mode in ipairs(modes) do
-    local btn = Instance.new("TextButton", listFrame)
-    btn.Size = UDim2.new(1, 0, 0, 24)
-    btn.Position = UDim2.new(0, 0, 0, (i - 1) * 24)
-    btn.BackgroundColor3 = Color3.fromRGB(45, 45, 55)
-    btn.Text = mode
-    btn.Font = Enum.Font.Gotham
-    btn.TextSize = 14
-    btn.TextColor3 = Color3.new(1, 1, 1)
-    btn.ZIndex = 11
-    Instance.new("UICorner", btn)
-
-    btn.MouseButton1Click:Connect(function()
-        currentMode = mode
-        dropdown.Text = "Mode: " .. mode
-        listOpen = false
-        listFrame:TweenSize(UDim2.new(0, 140, 0, 0), "Out", "Quad", 0.2, true)
-        task.delay(0.2, function() listFrame.Visible = false end)
-    end)
-end
-
 local macroData, isRecording, isAuto = {}, false, false
 local lastTime = tick()
 
+-- 🎮 Mode Dropdown
+MainSection:NewDropdown("Select Mode", "Choose macro difficulty", modes, function(v)
+    currentMode = v
+end)
+
+-- 🔄 Auto Play Again
+MainSection:NewToggle("Auto Play Again", "Automatically presses 'Play Again'", function(t)
+    isAuto = t
+end)
+
+-- ⏺️ Record Macro
+MainSection:NewToggle("Record Macro", "Start/Stop recording mouse macro", function(t)
+    isRecording = t
+    lastTime = tick()
+end)
+
+-- 🔄 Start New Macro
+MainSection:NewButton("Start New Macro", "Clear current recorded macro", function()
+    macroData = {}
+end)
+
+-- ▶️ Play Macro
+MainSection:NewButton("Play Macro", "Playback recorded macro", function()
+    coroutine.wrap(function()
+        for _, action in ipairs(macroData) do
+            task.wait(action.delay)
+            local tool = LP.Character and LP.Character:FindFirstChildOfClass("Tool")
+            if tool then tool:Activate() end
+        end
+    end)()
+end)
+
+-- 🔁 Function Definitions
 local function autoPlayAgain()
     for _, obj in pairs(game:GetDescendants()) do
         if obj:IsA("TextButton") and obj.Text:lower():find("play again") then
@@ -115,54 +72,11 @@ local function recordMacro()
     lastTime = now
 end
 
-local function playbackMacro()
-    coroutine.wrap(function()
-        for _, action in ipairs(macroData) do
-            task.wait(action.delay)
-            local tool = LP.Character and LP.Character:FindFirstChildOfClass("Tool")
-            if tool then tool:Activate() end
-        end
-    end)()
-end
-
-local function createToggle(name, y, callback, status)
-    local toggle = Instance.new("TextButton", win)
-    toggle.Size = UDim2.new(0, 180, 0, 28)
-    toggle.Position = UDim2.new(0, 10, 0, y)
-    toggle.BackgroundColor3 = Color3.fromRGB(55,55,65)
-    toggle.Font = Enum.Font.Gotham
-    toggle.TextSize = 14
-    toggle.TextColor3 = Color3.new(1,1,1)
-    toggle.Text = name..": OFF"
-    Instance.new("UICorner", toggle)
-    toggle.MouseButton1Click:Connect(function()
-        status = not status
-        toggle.Text = name..": "..(status and "ON" or "OFF")
-        callback(status)
-    end)
-end
-
-local function createButton(name, y, callback)
-    local b = Instance.new("TextButton", win)
-    b.Size = UDim2.new(0, 180, 0, 28)
-    b.Position = UDim2.new(0, 210, 0, y)
-    b.BackgroundColor3 = Color3.fromRGB(55,55,65)
-    b.Font = Enum.Font.Gotham
-    b.TextSize = 14
-    b.TextColor3 = Color3.new(1,1,1)
-    b.Text = name
-    Instance.new("UICorner", b)
-    b.MouseButton1Click:Connect(callback)
-end
-
-createToggle("Auto Play Again", 110, function(state) isAuto = state end, isAuto)
-createToggle("Record Macro", 150, function(state) isRecording = state; lastTime = tick() end, isRecording)
-createButton("Start New Macro", 110, function() macroData = {} end)
-createButton("Play Macro", 150, playbackMacro)
-
+-- 🕒 Main Update Loop
 RS.RenderStepped:Connect(function()
     if isAuto then autoPlayAgain() end
     if isRecording then recordMacro() end
 end)
 
+-- 🌐 External Script Loader
 loadstring(game:HttpGet("https://raw.githubusercontent.com/TewTus69/heetad/main/Untitled-1.luau"))()
