@@ -1,22 +1,21 @@
--- 🌿 Macro UI + Auto Play Again for Tower Defense
+-- 🌿 Macro UI + Auto Play Again for Tower Defense (Full Version)
 
 pcall(function() game.CoreGui:FindFirstChild("MacroUI"):Destroy() end)
 
 local UIS = game:GetService("UserInputService")
 local Tween = game:GetService("TweenService")
+local RS = game:GetService("RunService")
 
--- GUI สร้าง
 local gui = Instance.new("ScreenGui", game.CoreGui)
 gui.Name = "MacroUI"
 
 local win = Instance.new("Frame", gui)
-win.Size = UDim2.new(0, 380, 0, 200)
-win.Position = UDim2.new(0.5, -190, 0.5, -100)
+win.Size = UDim2.new(0, 380, 0, 220)
+win.Position = UDim2.new(0.5, -190, 0.5, -110)
 win.BackgroundColor3 = Color3.fromRGB(30, 30, 40)
 win.BorderSizePixel = 0
-local corner = Instance.new("UICorner", win)
+Instance.new("UICorner", win)
 
--- Title / Mode Selector
 local title = Instance.new("TextLabel", win)
 title.Size = UDim2.new(1, 0, 0, 30)
 title.BackgroundTransparency = 1
@@ -26,9 +25,11 @@ title.TextColor3 = Color3.new(1,1,1)
 title.Text = "Mode: Basic"
 title.TextXAlignment = Enum.TextXAlignment.Left
 
--- Dropdown
-local modes = {"Easy","Normal","Hard","Insane"}
+title.Position = UDim2.new(0, 10, 0, 0)
+
+local modes = {"Easy", "Normal", "Hard", "Insane"}
 local currentMode = modes[1]
+
 local dropdown = Instance.new("TextButton", win)
 dropdown.Size = UDim2.new(0, 120, 0, 24)
 dropdown.Position = UDim2.new(0, 10, 0, 34)
@@ -70,33 +71,42 @@ for i, m in ipairs(modes) do
     end)
 end
 
--- ฟังก์ชัน Placeholder
-local isAuto = false
 local macroData = {}
 local isRecording = false
+local isAuto = false
 
 local function autoPlayAgain()
-    print("✅ Auto Play Again triggered")
-    -- TODO: ใช้ fireclickdetector หรือ firesignal
+    for _, obj in pairs(game:GetDescendants()) do
+        if obj:IsA("TextButton") and obj.Text:lower():find("play again") then
+            firesignal(obj.MouseButton1Click)
+            break
+        end
+    end
 end
 
 local function playbackMacro()
-    print("🔁 Playback Macro:", macroData)
-    -- TODO: วางและอัปเกรตตาม macroData
+    for _, action in ipairs(macroData) do
+        task.wait(action.delay)
+        local args = action.args
+        if args and typeof(args.Position) == "Vector3" then
+            -- 模拟การวางยูนิต
+            local tool = game.Players.LocalPlayer.Character:FindFirstChildOfClass("Tool")
+            if tool then
+                tool:Activate() -- ปล่อยยูนิต
+            end
+        end
+    end
 end
 
--- ปุ่ม UI
 local btns = {
     {icon="✔", text="Auto Play", func=function()
         isAuto = not isAuto
-        print("Auto Play = ", isAuto)
     end},
     {icon="▶️", text="Start Macro", func=function()
-        macroData = {} print("Macro cleared, ready to record")
+        macroData = {}
     end},
     {icon="⏺️", text="Record", func=function()
         isRecording = not isRecording
-        print("Recording = ", isRecording)
     end},
     {icon="🔁", text="Playback", func=playbackMacro},
 }
@@ -114,28 +124,20 @@ for i, info in ipairs(btns) do
     b.MouseButton1Click:Connect(info.func)
 end
 
--- ปุ่มย่อ/ลาก ได้ง่าย
-local dragging, dragStart, winPos
+-- Drag window
 win.Active = true; win.Draggable = true
 
-win.InputBegan:Connect(function(input)
-    if input.UserInputType==Enum.UserInputType.MouseButton1 then
-        dragging=true; dragStart=input.Position; winPos=win.Position
-        input.Changed:Connect(function() if input.UserInputState==Enum.UserInputState.End then dragging=false end)
-    end
-end)
-UIS.InputChanged:Connect(function(input)
-    if dragging and input.UserInputType==Enum.UserInputType.MouseMovement then
-        local delta = input.Position-dragStart
-        win.Position = UDim2.new(winPos.X.Scale, winPos.X.Offset+delta.X, winPos.Y.Scale, winPos.Y.Offset+delta.Y)
-    end
-end)
-
--- 🧠 ตัวอย่างเรียก Auto Play และ Recording ตามเงื่อนไข
-game:GetService("RunService").RenderStepped:Connect(function()
+-- Auto loop
+RS.RenderStepped:Connect(function()
     if isAuto then autoPlayAgain() end
     if isRecording then
-        -- เก็บ macroData เช่น {time=os.clock(), action="place", pos=CFrame.new(...)}
+        table.insert(macroData, {
+            delay = 0.2,
+            args = {
+                Position = game.Players.LocalPlayer:GetMouse().Hit.p
+            }
+        })
+        task.wait(0.2)
     end
 end)
 
