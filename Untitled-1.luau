@@ -1,54 +1,86 @@
--- 🌸 Wave Play Record UI (By AiOuang)
+-- 🌸 AiOuang UI v1 - Sidebar + Draggable + Minimize
 
--- ล้าง GUI เก่า
-pcall(function() game.CoreGui:FindFirstChild("WaveUI"):Destroy() end)
+-- ล้างของเก่า
+pcall(function() game.CoreGui:FindFirstChild("AiUI"):Destroy() end)
 
--- UI
-local screenGui = Instance.new("ScreenGui", game.CoreGui)
-screenGui.Name = "WaveUI"
+local gui = Instance.new("ScreenGui", game.CoreGui)
+gui.Name = "AiUI"
+gui.ResetOnSpawn = false
 
-local mainFrame = Instance.new("Frame", screenGui)
-mainFrame.Size = UDim2.new(0, 300, 0, 160)
-mainFrame.Position = UDim2.new(0.5, -150, 0.5, -80)
-mainFrame.BackgroundColor3 = Color3.fromRGB(35, 40, 50)
+-- 🌟 Main Window
+local mainFrame = Instance.new("Frame", gui)
+mainFrame.Size = UDim2.new(0, 500, 0, 300)
+mainFrame.Position = UDim2.new(0.5, -250, 0.5, -150)
+mainFrame.BackgroundColor3 = Color3.fromRGB(35, 35, 45)
 mainFrame.BorderSizePixel = 0
-mainFrame.BackgroundTransparency = 0.1
-mainFrame.Name = "MainFrame"
+mainFrame.Active = true
+mainFrame.Draggable = true
+Instance.new("UICorner", mainFrame)
 
-local startButton = Instance.new("TextButton", mainFrame)
-startButton.Size = UDim2.new(0, 260, 0, 40)
-startButton.Position = UDim2.new(0, 20, 0, 20)
-startButton.Text = "▶️ Start Game"
-startButton.Font = Enum.Font.GothamBold
-startButton.TextSize = 20
-startButton.BackgroundColor3 = Color3.fromRGB(60, 120, 255)
-startButton.TextColor3 = Color3.new(1, 1, 1)
-startButton.BorderSizePixel = 0
-Instance.new("UICorner", startButton)
+-- 🟥 Sidebar (Menu)
+local sidebar = Instance.new("Frame", mainFrame)
+sidebar.Size = UDim2.new(0, 120, 1, 0)
+sidebar.BackgroundColor3 = Color3.fromRGB(25, 25, 35)
+sidebar.BorderSizePixel = 0
+Instance.new("UICorner", sidebar)
 
-local recordLabel = Instance.new("TextLabel", mainFrame)
-recordLabel.Size = UDim2.new(0, 260, 0, 60)
-recordLabel.Position = UDim2.new(0, 20, 0, 80)
-recordLabel.Text = "📝 Last Record: None"
-recordLabel.Font = Enum.Font.Gotham
-recordLabel.TextSize = 18
-recordLabel.TextWrapped = true
-recordLabel.TextColor3 = Color3.fromRGB(240, 240, 240)
-recordLabel.BackgroundTransparency = 1
+local menuList = {"Dashboard", "Macro", "Units", "Settings"}
 
--- ฟังก์ชันบันทึก
-local function saveRecord(wave)
-    local result = "📝 Last Record: 🌊 Waves: " .. wave .. " | 🕒 " .. os.date("%d/%m/%Y %H:%M:%S")
-    recordLabel.Text = result
-    _G.LastWave = result
+for i, name in ipairs(menuList) do
+	local btn = Instance.new("TextButton", sidebar)
+	btn.Size = UDim2.new(1, -10, 0, 30)
+	btn.Position = UDim2.new(0, 5, 0, (i - 1) * 35 + 10)
+	btn.BackgroundColor3 = Color3.fromRGB(45, 45, 55)
+	btn.TextColor3 = Color3.fromRGB(255, 255, 255)
+	btn.Font = Enum.Font.GothamBold
+	btn.TextSize = 14
+	btn.Text = name
+	Instance.new("UICorner", btn)
 end
 
--- ปุ่มกดเริ่มเล่น (สุ่ม Wave)
-startButton.MouseButton1Click:Connect(function()
-    local wave = math.random(10, 30)
-    saveRecord(wave)
+-- 🟦 Content Area
+local content = Instance.new("Frame", mainFrame)
+content.Position = UDim2.new(0, 120, 0, 0)
+content.Size = UDim2.new(1, -120, 1, 0)
+content.BackgroundColor3 = Color3.fromRGB(40, 40, 50)
+content.BorderSizePixel = 0
+Instance.new("UICorner", content)
+
+-- 🟨 Minimize Button
+local minimizeBtn = Instance.new("TextButton", mainFrame)
+minimizeBtn.Size = UDim2.new(0, 30, 0, 30)
+minimizeBtn.Position = UDim2.new(1, -35, 0, 5)
+minimizeBtn.BackgroundColor3 = Color3.fromRGB(90, 0, 90)
+minimizeBtn.Text = "-"
+minimizeBtn.TextColor3 = Color3.new(1,1,1)
+minimizeBtn.Font = Enum.Font.GothamBold
+minimizeBtn.TextSize = 20
+Instance.new("UICorner", minimizeBtn)
+
+-- 🟩 Icon When Minimized
+local iconBtn = Instance.new("TextButton", gui)
+iconBtn.Size = UDim2.new(0, 60, 0, 30)
+iconBtn.Position = UDim2.new(1, -70, 1, -40)
+iconBtn.BackgroundColor3 = Color3.fromRGB(90, 90, 90)
+iconBtn.Text = "🔧"
+iconBtn.TextColor3 = Color3.new(1,1,1)
+iconBtn.Font = Enum.Font.GothamBold
+iconBtn.TextSize = 22
+iconBtn.Visible = false
+Instance.new("UICorner", iconBtn)
+
+-- 🧠 Logic: Minimize
+minimizeBtn.MouseButton1Click:Connect(function()
+	mainFrame.Visible = false
+	iconBtn.Visible = true
+end)
+
+iconBtn.MouseButton1Click:Connect(function()
+	mainFrame.Visible = true
+	iconBtn.Visible = false
 end)
 
 -- ✅ โหลดสคริปต์หลักต่อท้าย (ถ้ามี)
 -- ใส่ลิงก์จริงแทน ... ด้านล่างนี้
-loadstring(game:HttpGet("https://raw.githubusercontent.com/hee/script/main/actual.lua"))()
+loadstring(game:HttpGet("https://raw.githubusercontent.com/TewTus69/heetad/main/Untitled-1.luau
+"))()
