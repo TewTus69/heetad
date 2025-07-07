@@ -31,7 +31,8 @@ title.Text = "Macro Controller"
 local modes = {"Easy", "Normal", "Hard", "Insane"}
 local currentMode = modes[1]
 
-local dropdown = Instance.new("TextButton", win)
+local dropdown = Instance.new("TextButton")
+dropdown.Parent = win
 dropdown.Size = UDim2.new(0, 140, 0, 26)
 dropdown.Position = UDim2.new(0, 10, 0, 40)
 dropdown.BackgroundColor3 = Color3.fromRGB(50, 50, 60)
@@ -41,13 +42,20 @@ dropdown.Font = Enum.Font.Gotham
 dropdown.TextSize = 14
 Instance.new("UICorner", dropdown)
 
-local listFrame = Instance.new("Frame", win)
+local listFrame = Instance.new("Frame")
+listFrame.Parent = gui -- ต้องอยู่ใน ScreenGui เพื่อไม่ถูกตัดโดยหน้าต่าง
+listFrame.Position = dropdown.AbsolutePosition + Vector2.new(0, dropdown.AbsoluteSize.Y)
 listFrame.Size = UDim2.new(0, 140, 0, 0)
-listFrame.Position = UDim2.new(0, 10, 0, 70)
 listFrame.BackgroundColor3 = Color3.fromRGB(50, 50, 60)
 listFrame.ClipsDescendants = true
 Instance.new("UICorner", listFrame)
 
+-- อัปเดตตำแหน่งตามการลากหน้าต่าง
+win:GetPropertyChangedSignal("Position"):Connect(function()
+    listFrame.Position = dropdown.AbsolutePosition + Vector2.new(0, dropdown.AbsoluteSize.Y)
+end)
+
+-- เพิ่มตัวเลือก
 local listOpen = false
 dropdown.MouseButton1Click:Connect(function()
     listOpen = not listOpen
