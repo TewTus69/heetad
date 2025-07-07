@@ -1,4 +1,4 @@
--- 🌸 AiOuang UI v1 - Sidebar + Draggable + Minimize
+-- 🌸 AiOuang UI v1 - Sidebar + Draggable Top + Minimize Icon Draggable
 
 pcall(function() game.CoreGui:FindFirstChild("AiUI"):Destroy() end)
 
@@ -11,9 +11,16 @@ mainFrame.Size = UDim2.new(0, 500, 0, 300)
 mainFrame.Position = UDim2.new(0.5, -250, 0.5, -150)
 mainFrame.BackgroundColor3 = Color3.fromRGB(35, 35, 45)
 mainFrame.BorderSizePixel = 0
-mainFrame.Active = true
-mainFrame.Draggable = true
 Instance.new("UICorner", mainFrame)
+
+-- ✅ DragBar (เฉพาะแถบบนลากได้)
+local dragBar = Instance.new("Frame", mainFrame)
+dragBar.Size = UDim2.new(1, 0, 0, 30)
+dragBar.BackgroundTransparency = 1
+dragBar.Name = "DragBar"
+dragBar.Active = true
+dragBar.Draggable = true
+dragBar.ZIndex = 2
 
 local sidebar = Instance.new("Frame", mainFrame)
 sidebar.Size = UDim2.new(0, 120, 1, 0)
@@ -51,6 +58,7 @@ minimizeBtn.Font = Enum.Font.GothamBold
 minimizeBtn.TextSize = 20
 Instance.new("UICorner", minimizeBtn)
 
+-- ✅ Icon เมื่อย่อ (ขยับได้ด้วย)
 local iconBtn = Instance.new("TextButton", gui)
 iconBtn.Size = UDim2.new(0, 60, 0, 30)
 iconBtn.Position = UDim2.new(1, -70, 1, -40)
@@ -60,6 +68,8 @@ iconBtn.TextColor3 = Color3.new(1,1,1)
 iconBtn.Font = Enum.Font.GothamBold
 iconBtn.TextSize = 22
 iconBtn.Visible = false
+iconBtn.Active = true
+iconBtn.Draggable = true
 Instance.new("UICorner", iconBtn)
 
 minimizeBtn.MouseButton1Click:Connect(function()
