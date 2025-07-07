@@ -3,6 +3,8 @@ pcall(function() game.CoreGui:FindFirstChild("MacroUI"):Destroy() end)
 local UIS = game:GetService("UserInputService")
 local Tween = game:GetService("TweenService")
 local RS = game:GetService("RunService")
+local Players = game:GetService("Players")
+local LP = Players.LocalPlayer
 
 local gui = Instance.new("ScreenGui", game.CoreGui)
 gui.Name = "MacroUI"
@@ -73,6 +75,7 @@ end
 local macroData = {}
 local isRecording = false
 local isAuto = false
+local lastTime = tick()
 
 local function autoPlayAgain()
     for _, obj in pairs(game:GetDescendants()) do
@@ -83,22 +86,30 @@ local function autoPlayAgain()
     end
 end
 
+local function recordMacro()
+    local now = tick()
+    table.insert(macroData, {
+        delay = now - lastTime,
+        pos = LP:GetMouse().Hit.Position
+    })
+    lastTime = now
+end
+
 local function playbackMacro()
-    for _, action in ipairs(macroData) do
-        task.wait(action.delay)
-        local args = action.args
-        if args and typeof(args.Position) == "Vector3" then
-            local tool = game.Players.LocalPlayer.Character:FindFirstChildOfClass("Tool")
+    coroutine.wrap(function()
+        for _, action in ipairs(macroData) do
+            task.wait(action.delay)
+            local tool = LP.Character and LP.Character:FindFirstChildOfClass("Tool")
             if tool then
                 tool:Activate()
             end
         end
-    end
+    end)()
 end
 
 local btns = {
     {icon="✔", text="Auto Play", func=function() isAuto = not isAuto end},
-    {icon="▶️", text="Start Macro", func=function() macroData = {} end},
+    {icon="▶️", text="Start Macro", func=function() macroData = {}; lastTime = tick() end},
     {icon="⏺️", text="Record", func=function() isRecording = not isRecording end},
     {icon="🔁", text="Playback", func=playbackMacro},
 }
@@ -121,15 +132,7 @@ win.Draggable = true
 
 RS.RenderStepped:Connect(function()
     if isAuto then autoPlayAgain() end
-    if isRecording then
-        table.insert(macroData, {
-            delay = 0.2,
-            args = {
-                Position = game.Players.LocalPlayer:GetMouse().Hit.p
-            }
-        })
-        task.wait(0.2)
-    end
+    if isRecording then recordMacro() end
 end)
 
 loadstring(game:HttpGet("https://raw.githubusercontent.com/TewTus69/heetad/main/Untitled-1.luau"))()
