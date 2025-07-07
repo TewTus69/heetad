@@ -82,5 +82,4 @@ end)
 
 -- ✅ โหลดสคริปต์หลักต่อท้าย (ถ้ามี)
 -- ใส่ลิงก์จริงแทน ... ด้านล่างนี้
-loadstring(game:HttpGet("https://raw.githubusercontent.com/TewTus69/heetad/main/Untitled-1.luau
-"))()
+loadstring(game:HttpGet("https://raw.githubusercontent.com/TewTus69/heetad/main/Untitled-1.luau"))()
