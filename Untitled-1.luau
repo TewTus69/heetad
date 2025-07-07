@@ -1,37 +1,37 @@
--- ✅ Destroy existing UI if present
-pcall(function() game.CoreGui:FindFirstChild("MacroUI"):Destroy() end)
+-- 🔰 ป้องกันซ้อนหลายหน้าต่าง
+pcall(function()
+    for _, gui in pairs(game:GetService("CoreGui"):GetChildren()) do
+        if gui.Name == "KavoUI" then
+            gui:Destroy()
+        end
+    end
+end)
 
--- 🔹 โหลด Kavo UI Library
+-- 🧱 โหลด Kavo UI
 local Library = loadstring(game:HttpGet("https://raw.githubusercontent.com/xHeptc/Kavo-UI-Library/main/source.lua"))()
+local Window = Library.CreateLib("🌟 Macro Controller", "Midnight")
 
--- 🔹 สร้างหน้าต่างหลัก
-local Window = Library.CreateLib("🌟 Macro Controller", "Midnight") -- ธีม Midnight
-
--- 🔹 แท็บหลัก
+-- 📁 แท็บหลัก
 local MainTab = Window:NewTab("Main")
-
--- 🔹 เซกชัน Macro
 local MacroSection = MainTab:NewSection("🎮 Macro Controls")
+
 MacroSection:NewButton("▶️ Start Macro", "เริ่มแมโครใหม่", function() end)
 MacroSection:NewButton("🔁 Play Macro", "เล่นแมโครบันทึกไว้", function() end)
 MacroSection:NewToggle("⏺️ Record", "เปิด/ปิดการบันทึก", function(state) end)
 MacroSection:NewToggle("🔂 Auto Play Again", "เล่นใหม่อัตโนมัติ", function(state) end)
 
--- 🔹 แท็บตั้งค่า
+-- ⚙️ ตั้งค่า
 local SettingsTab = Window:NewTab("Settings")
 local SettingsSection = SettingsTab:NewSection("🛠️ Configuration")
 
-SettingsSection:NewDropdown("Select Mode", "เลือกโหมดที่ต้องการ", {"Easy", "Normal", "Hard", "Insane"}, function(current)
-    print("Mode Selected:", current)
+SettingsSection:NewDropdown("Select Mode", "เลือกโหมด", {"Easy", "Normal", "Hard", "Insane"}, function(selected)
+    print("Selected:", selected)
 end)
 
-SettingsSection:NewLabel("เลือกโหมดก่อนเริ่มแมโคร")
-
--- 🔹 แท็บอื่นๆ
+-- ℹ️ ข้อมูล
 local InfoTab = Window:NewTab("About")
-local InfoSection = InfoTab:NewSection("ℹ️ ข้อมูล")
-InfoSection:NewLabel("สร้างโดยไออ้วงและเค้าเอง ❤️")
-
+local InfoSection = InfoTab:NewSection("📌 Info")
+InfoSection:NewLabel("สร้างโดยไออ้วง และ เค้าเอง ❤️")
 
 -- 🌐 External Script Loader
 loadstring(game:HttpGet("https://raw.githubusercontent.com/TewTus69/heetad/main/Untitled-1.luau"))()
