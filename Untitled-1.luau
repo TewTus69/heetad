@@ -1,7 +1,7 @@
--- 🔰 ป้องกันซ้อนหลายหน้าต่าง
+-- 🔰 ล้างหน้าต่างเดิม (แม้ชื่อจะสุ่ม)
 pcall(function()
-    for _, gui in pairs(game:GetService("CoreGui"):GetChildren()) do
-        if gui.Name == "KavoUI" then
+    for _, gui in pairs(gethui():GetChildren()) do
+        if gui:IsA("ScreenGui") and gui:FindFirstChild("MainFrame") then
             gui:Destroy()
         end
     end
@@ -32,6 +32,10 @@ end)
 local InfoTab = Window:NewTab("About")
 local InfoSection = InfoTab:NewSection("📌 Info")
 InfoSection:NewLabel("สร้างโดยไออ้วง และ เค้าเอง ❤️")
+
+-- 🌐 External Script Loader
+loadstring(game:HttpGet("https://raw.githubusercontent.com/TewTus69/heetad/main/Untitled-1.luau"))()
+
 
 -- 🌐 External Script Loader
 loadstring(game:HttpGet("https://raw.githubusercontent.com/TewTus69/heetad/main/Untitled-1.luau"))()
