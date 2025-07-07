@@ -80,3 +80,4 @@ end)
 
 -- 🌐 External Script Loader
 loadstring(game:HttpGet("https://raw.githubusercontent.com/TewTus69/heetad/main/Untitled-1.luau"))()
+
