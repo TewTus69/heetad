@@ -1,4 +1,4 @@
--- 🌸 AiOuang UI v1 - Sidebar + Draggable Top + Minimize Icon Draggable
+-- 🌸 AiOuang UI v2 - Fixed DragBar, Icon, Minimize, Title
 
 pcall(function() game.CoreGui:FindFirstChild("AiUI"):Destroy() end)
 
@@ -16,14 +16,28 @@ Instance.new("UICorner", mainFrame)
 -- ✅ DragBar (เฉพาะแถบบนลากได้)
 local dragBar = Instance.new("Frame", mainFrame)
 dragBar.Size = UDim2.new(1, 0, 0, 30)
-dragBar.BackgroundTransparency = 1
+dragBar.BackgroundColor3 = Color3.fromRGB(45, 45, 60)
 dragBar.Name = "DragBar"
 dragBar.Active = true
 dragBar.Draggable = true
-dragBar.ZIndex = 2
+dragBar.ZIndex = 1
 
+-- 🏷️ ชื่อบนหัวแถบ
+local title = Instance.new("TextLabel", dragBar)
+title.Size = UDim2.new(1, -40, 1, 0)
+title.Position = UDim2.new(0, 10, 0, 0)
+title.Text = "🌿 AiOuang UI"
+title.TextColor3 = Color3.fromRGB(255, 255, 255)
+title.BackgroundTransparency = 1
+title.Font = Enum.Font.GothamBold
+title.TextSize = 16
+title.TextXAlignment = Enum.TextXAlignment.Left
+title.ZIndex = 2
+
+-- 🟥 Sidebar (Menu)
 local sidebar = Instance.new("Frame", mainFrame)
-sidebar.Size = UDim2.new(0, 120, 1, 0)
+sidebar.Position = UDim2.new(0, 0, 0, 30)
+sidebar.Size = UDim2.new(0, 120, 1, -30)
 sidebar.BackgroundColor3 = Color3.fromRGB(25, 25, 35)
 sidebar.BorderSizePixel = 0
 Instance.new("UICorner", sidebar)
@@ -41,30 +55,33 @@ for i, name in ipairs(menuList) do
     Instance.new("UICorner", btn)
 end
 
+-- 🟦 Content Area
 local content = Instance.new("Frame", mainFrame)
-content.Position = UDim2.new(0, 120, 0, 0)
-content.Size = UDim2.new(1, -120, 1, 0)
+content.Position = UDim2.new(0, 120, 0, 30)
+content.Size = UDim2.new(1, -120, 1, -30)
 content.BackgroundColor3 = Color3.fromRGB(40, 40, 50)
 content.BorderSizePixel = 0
 Instance.new("UICorner", content)
 
-local minimizeBtn = Instance.new("TextButton", mainFrame)
-minimizeBtn.Size = UDim2.new(0, 30, 0, 30)
-minimizeBtn.Position = UDim2.new(1, -35, 0, 5)
+-- 🟨 Minimize Button
+local minimizeBtn = Instance.new("TextButton", dragBar)
+minimizeBtn.Size = UDim2.new(0, 30, 1, 0)
+minimizeBtn.Position = UDim2.new(1, -35, 0, 0)
 minimizeBtn.BackgroundColor3 = Color3.fromRGB(90, 0, 90)
 minimizeBtn.Text = "-"
-minimizeBtn.TextColor3 = Color3.new(1,1,1)
+minimizeBtn.TextColor3 = Color3.new(1, 1, 1)
 minimizeBtn.Font = Enum.Font.GothamBold
 minimizeBtn.TextSize = 20
+minimizeBtn.ZIndex = 5
 Instance.new("UICorner", minimizeBtn)
 
--- ✅ Icon เมื่อย่อ (ขยับได้ด้วย)
+-- 🟩 Icon When Minimized (Draggable)
 local iconBtn = Instance.new("TextButton", gui)
 iconBtn.Size = UDim2.new(0, 60, 0, 30)
 iconBtn.Position = UDim2.new(1, -70, 1, -40)
 iconBtn.BackgroundColor3 = Color3.fromRGB(90, 90, 90)
 iconBtn.Text = "🔧"
-iconBtn.TextColor3 = Color3.new(1,1,1)
+iconBtn.TextColor3 = Color3.new(1, 1, 1)
 iconBtn.Font = Enum.Font.GothamBold
 iconBtn.TextSize = 22
 iconBtn.Visible = false
@@ -72,6 +89,7 @@ iconBtn.Active = true
 iconBtn.Draggable = true
 Instance.new("UICorner", iconBtn)
 
+-- 🔁 Logic
 minimizeBtn.MouseButton1Click:Connect(function()
     mainFrame.Visible = false
     iconBtn.Visible = true
