@@ -1,7 +1,6 @@
 pcall(function() game.CoreGui:FindFirstChild("MacroUI"):Destroy() end)
 
 local UIS = game:GetService("UserInputService")
-local Tween = game:GetService("TweenService")
 local RS = game:GetService("RunService")
 local Players = game:GetService("Players")
 local LP = Players.LocalPlayer
@@ -11,10 +10,12 @@ gui.Name = "MacroUI"
 gui.ResetOnSpawn = false
 
 local win = Instance.new("Frame", gui)
-win.Size = UDim2.new(0, 380, 0, 260)
-win.Position = UDim2.new(0.5, -190, 0.5, -130)
+win.Size = UDim2.new(0, 400, 0, 300)
+win.Position = UDim2.new(0.5, -200, 0.5, -150)
 win.BackgroundColor3 = Color3.fromRGB(30, 30, 40)
 win.BorderSizePixel = 0
+win.Active = true
+win.Draggable = true
 Instance.new("UICorner", win)
 
 local title = Instance.new("TextLabel", win)
@@ -25,56 +26,53 @@ title.Font = Enum.Font.GothamBold
 title.TextSize = 16
 title.TextColor3 = Color3.new(1,1,1)
 title.TextXAlignment = Enum.TextXAlignment.Left
-title.Text = "Mode: Easy"
+title.Text = "Macro Controller"
 
 local modes = {"Easy", "Normal", "Hard", "Insane"}
 local currentMode = modes[1]
 
 local dropdown = Instance.new("TextButton", win)
-dropdown.Size = UDim2.new(0, 120, 0, 24)
+dropdown.Size = UDim2.new(0, 140, 0, 26)
 dropdown.Position = UDim2.new(0, 10, 0, 40)
-dropdown.BackgroundColor3 = Color3.fromRGB(45,45,55)
+dropdown.BackgroundColor3 = Color3.fromRGB(50, 50, 60)
+dropdown.Text = "Mode: "..currentMode
+dropdown.TextColor3 = Color3.new(1,1,1)
 dropdown.Font = Enum.Font.Gotham
 dropdown.TextSize = 14
-dropdown.TextColor3 = Color3.new(1,1,1)
-dropdown.Text = currentMode
 Instance.new("UICorner", dropdown)
 
-local listOpen = false
 local listFrame = Instance.new("Frame", win)
-listFrame.Position = UDim2.new(0, 10, 0, 68)
-listFrame.Size = UDim2.new(0, 120, 0, 0)
-listFrame.BackgroundColor3 = Color3.fromRGB(45,45,55)
+listFrame.Size = UDim2.new(0, 140, 0, 0)
+listFrame.Position = UDim2.new(0, 10, 0, 70)
+listFrame.BackgroundColor3 = Color3.fromRGB(50, 50, 60)
 listFrame.ClipsDescendants = true
 Instance.new("UICorner", listFrame)
 
+local listOpen = false
 dropdown.MouseButton1Click:Connect(function()
     listOpen = not listOpen
-    listFrame:TweenSize(UDim2.new(0, 120, 0, listOpen and #modes * 24 or 0), "Out", "Quad", 0.2, true)
+    listFrame:TweenSize(UDim2.new(0, 140, 0, listOpen and #modes * 24 or 0), "Out", "Quad", 0.2, true)
 end)
 
 for i, m in ipairs(modes) do
-    local btn = Instance.new("TextButton", listFrame)
-    btn.Size = UDim2.new(1, 0, 0, 24)
-    btn.Position = UDim2.new(0, 0, 0, (i - 1) * 24)
-    btn.BackgroundColor3 = Color3.fromRGB(40, 40, 50)
-    btn.Font = Enum.Font.Gotham
-    btn.TextSize = 14
-    btn.TextColor3 = Color3.new(1,1,1)
-    btn.Text = m
-    Instance.new("UICorner", btn)
-    btn.MouseButton1Click:Connect(function()
+    local opt = Instance.new("TextButton", listFrame)
+    opt.Size = UDim2.new(1, 0, 0, 24)
+    opt.Position = UDim2.new(0, 0, 0, (i - 1) * 24)
+    opt.BackgroundColor3 = Color3.fromRGB(45, 45, 55)
+    opt.Text = m
+    opt.Font = Enum.Font.Gotham
+    opt.TextSize = 14
+    opt.TextColor3 = Color3.new(1,1,1)
+    Instance.new("UICorner", opt)
+    opt.MouseButton1Click:Connect(function()
         currentMode = m
-        dropdown.Text = m
-        title.Text = "Mode: " .. m
+        dropdown.Text = "Mode: "..m
         listOpen = false
-        listFrame:TweenSize(UDim2.new(0, 120, 0, 0), "Out", "Quad", 0.2, true)
+        listFrame:TweenSize(UDim2.new(0, 140, 0, 0), "Out", "Quad", 0.2, true)
     end)
 end
 
-local macroData = {}
-local isRecording = false
-local isAuto = false
+local macroData, isRecording, isAuto = {}, false, false
 local lastTime = tick()
 
 local function autoPlayAgain()
@@ -100,35 +98,45 @@ local function playbackMacro()
         for _, action in ipairs(macroData) do
             task.wait(action.delay)
             local tool = LP.Character and LP.Character:FindFirstChildOfClass("Tool")
-            if tool then
-                tool:Activate()
-            end
+            if tool then tool:Activate() end
         end
     end)()
 end
 
-local btns = {
-    {icon="✔", text="Auto Play", func=function() isAuto = not isAuto end},
-    {icon="▶️", text="Start Macro", func=function() macroData = {}; lastTime = tick() end},
-    {icon="⏺️", text="Record", func=function() isRecording = not isRecording end},
-    {icon="🔁", text="Playback", func=playbackMacro},
-}
+local function createToggle(name, y, callback, status)
+    local toggle = Instance.new("TextButton", win)
+    toggle.Size = UDim2.new(0, 180, 0, 28)
+    toggle.Position = UDim2.new(0, 10, 0, y)
+    toggle.BackgroundColor3 = Color3.fromRGB(55,55,65)
+    toggle.Font = Enum.Font.Gotham
+    toggle.TextSize = 14
+    toggle.TextColor3 = Color3.new(1,1,1)
+    toggle.Text = name..": OFF"
+    Instance.new("UICorner", toggle)
+    toggle.MouseButton1Click:Connect(function()
+        status = not status
+        toggle.Text = name..": "..(status and "ON" or "OFF")
+        callback(status)
+    end)
+end
 
-for i, info in ipairs(btns) do
+local function createButton(name, y, callback)
     local b = Instance.new("TextButton", win)
-    b.Size = UDim2.new(0, 160, 0, 28)
-    b.Position = UDim2.new(0, 10, 0, 100 + (i - 1) * 34)
-    b.BackgroundColor3 = Color3.fromRGB(50,50,60)
+    b.Size = UDim2.new(0, 180, 0, 28)
+    b.Position = UDim2.new(0, 210, 0, y)
+    b.BackgroundColor3 = Color3.fromRGB(55,55,65)
     b.Font = Enum.Font.Gotham
     b.TextSize = 14
     b.TextColor3 = Color3.new(1,1,1)
-    b.Text = info.icon .. " " .. info.text
+    b.Text = name
     Instance.new("UICorner", b)
-    b.MouseButton1Click:Connect(info.func)
+    b.MouseButton1Click:Connect(callback)
 end
 
-win.Active = true
-win.Draggable = true
+createToggle("Auto Play Again", 110, function(state) isAuto = state end, isAuto)
+createToggle("Record Macro", 150, function(state) isRecording = state; lastTime = tick() end, isRecording)
+createButton("Start New Macro", 110, function() macroData = {} end)
+createButton("Play Macro", 150, playbackMacro)
 
 RS.RenderStepped:Connect(function()
     if isAuto then autoPlayAgain() end
