@@ -36,47 +36,61 @@ dropdown.Parent = win
 dropdown.Size = UDim2.new(0, 140, 0, 26)
 dropdown.Position = UDim2.new(0, 10, 0, 40)
 dropdown.BackgroundColor3 = Color3.fromRGB(50, 50, 60)
-dropdown.Text = "Mode: "..currentMode
-dropdown.TextColor3 = Color3.new(1,1,1)
+dropdown.Text = "Mode: " .. currentMode
+dropdown.TextColor3 = Color3.new(1, 1, 1)
 dropdown.Font = Enum.Font.Gotham
 dropdown.TextSize = 14
 Instance.new("UICorner", dropdown)
 
 local listFrame = Instance.new("Frame")
-listFrame.Parent = gui -- ต้องอยู่ใน ScreenGui เพื่อไม่ถูกตัดโดยหน้าต่าง
-listFrame.Position = dropdown.AbsolutePosition + Vector2.new(0, dropdown.AbsoluteSize.Y)
 listFrame.Size = UDim2.new(0, 140, 0, 0)
+listFrame.Position = dropdown.AbsolutePosition + Vector2.new(0, dropdown.AbsoluteSize.Y)
 listFrame.BackgroundColor3 = Color3.fromRGB(50, 50, 60)
 listFrame.ClipsDescendants = true
+listFrame.Visible = false
+listFrame.ZIndex = 10
+listFrame.Parent = gui
 Instance.new("UICorner", listFrame)
 
--- อัปเดตตำแหน่งตามการลากหน้าต่าง
-win:GetPropertyChangedSignal("Position"):Connect(function()
-    listFrame.Position = dropdown.AbsolutePosition + Vector2.new(0, dropdown.AbsoluteSize.Y)
+local listOpen = false
+
+-- Fix position when GUI moves
+game:GetService("RunService").RenderStepped:Connect(function()
+    if listOpen then
+        listFrame.Position = dropdown.AbsolutePosition + Vector2.new(0, dropdown.AbsoluteSize.Y)
+    end
 end)
 
--- เพิ่มตัวเลือก
-local listOpen = false
 dropdown.MouseButton1Click:Connect(function()
     listOpen = not listOpen
-    listFrame:TweenSize(UDim2.new(0, 140, 0, listOpen and #modes * 24 or 0), "Out", "Quad", 0.2, true)
+    listFrame.Visible = true
+    listFrame:TweenSize(UDim2.new(0, 140, 0, listOpen and (#modes * 24) or 0), "Out", "Quad", 0.2, true)
+
+    if not listOpen then
+        task.delay(0.2, function()
+            listFrame.Visible = false
+        end)
+    end
 end)
 
-for i, m in ipairs(modes) do
-    local opt = Instance.new("TextButton", listFrame)
-    opt.Size = UDim2.new(1, 0, 0, 24)
-    opt.Position = UDim2.new(0, 0, 0, (i - 1) * 24)
-    opt.BackgroundColor3 = Color3.fromRGB(45, 45, 55)
-    opt.Text = m
-    opt.Font = Enum.Font.Gotham
-    opt.TextSize = 14
-    opt.TextColor3 = Color3.new(1,1,1)
-    Instance.new("UICorner", opt)
-    opt.MouseButton1Click:Connect(function()
-        currentMode = m
-        dropdown.Text = "Mode: "..m
+for i, mode in ipairs(modes) do
+    local btn = Instance.new("TextButton", listFrame)
+    btn.Size = UDim2.new(1, 0, 0, 24)
+    btn.Position = UDim2.new(0, 0, 0, (i - 1) * 24)
+    btn.BackgroundColor3 = Color3.fromRGB(45, 45, 55)
+    btn.Text = mode
+    btn.Font = Enum.Font.Gotham
+    btn.TextSize = 14
+    btn.TextColor3 = Color3.new(1, 1, 1)
+    btn.ZIndex = 11
+    Instance.new("UICorner", btn)
+
+    btn.MouseButton1Click:Connect(function()
+        currentMode = mode
+        dropdown.Text = "Mode: " .. mode
         listOpen = false
         listFrame:TweenSize(UDim2.new(0, 140, 0, 0), "Out", "Quad", 0.2, true)
+        task.delay(0.2, function() listFrame.Visible = false end)
     end)
 end
 
