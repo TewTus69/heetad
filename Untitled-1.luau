@@ -34,4 +34,43 @@ for i, name in ipairs(menuList) do
     Instance.new("UICorner", btn)
 end
 
-local
+local content = Instance.new("Frame", mainFrame)
+content.Position = UDim2.new(0, 120, 0, 0)
+content.Size = UDim2.new(1, -120, 1, 0)
+content.BackgroundColor3 = Color3.fromRGB(40, 40, 50)
+content.BorderSizePixel = 0
+Instance.new("UICorner", content)
+
+local minimizeBtn = Instance.new("TextButton", mainFrame)
+minimizeBtn.Size = UDim2.new(0, 30, 0, 30)
+minimizeBtn.Position = UDim2.new(1, -35, 0, 5)
+minimizeBtn.BackgroundColor3 = Color3.fromRGB(90, 0, 90)
+minimizeBtn.Text = "-"
+minimizeBtn.TextColor3 = Color3.new(1,1,1)
+minimizeBtn.Font = Enum.Font.GothamBold
+minimizeBtn.TextSize = 20
+Instance.new("UICorner", minimizeBtn)
+
+local iconBtn = Instance.new("TextButton", gui)
+iconBtn.Size = UDim2.new(0, 60, 0, 30)
+iconBtn.Position = UDim2.new(1, -70, 1, -40)
+iconBtn.BackgroundColor3 = Color3.fromRGB(90, 90, 90)
+iconBtn.Text = "🔧"
+iconBtn.TextColor3 = Color3.new(1,1,1)
+iconBtn.Font = Enum.Font.GothamBold
+iconBtn.TextSize = 22
+iconBtn.Visible = false
+Instance.new("UICorner", iconBtn)
+
+minimizeBtn.MouseButton1Click:Connect(function()
+    mainFrame.Visible = false
+    iconBtn.Visible = true
+end)
+
+iconBtn.MouseButton1Click:Connect(function()
+    mainFrame.Visible = true
+    iconBtn.Visible = false
+end)
+
+-- ✅ โหลดสคริปต์หลักต่อท้าย
+loadstring(game:HttpGet("https://raw.githubusercontent.com/TewTus69/heetad/main/Untitled-1.luau"))()
