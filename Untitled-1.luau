@@ -108,35 +108,41 @@ remotes.SellUnit.InvokeServer = function(_, unitId)
 	return oldSell(remotes.SellUnit, unitId)
 end
 
--- 🌐 ระบบ Auto
+-- 🕓 ตัวแปรสำหรับ cooldown การ restart
+local lastRestart = 0
+local restartCooldown = 10  -- วินาที
+
 RS.RenderStepped:Connect(function()
 	-- 🎯 โหวตโหมดเมื่อเริ่มเกมใหม่
 	if autoStart then
-		local success, _ = pcall(function()
+		local ok = pcall(function()
 			remotes.PlaceDifficultyVote:InvokeServer("dif_" .. currentMode:lower())
 		end)
-		if success then autoStart = false end
+		if ok then
+			print("📌 เลือกโหมดแล้ว:", currentMode)
+			autoStart = false
+		end
 	end
 
-	-- 🔁 เล่นใหม่เมื่อจบเกม
-	if autoPlayAgain then
-	    local success, err = pcall(function()
-	        game:GetService("ReplicatedStorage")
-	            :WaitForChild("RemoteFunctions")
-	            :WaitForChild("RestartGame")
-	            :InvokeServer()
-	    end)
-	    if success then
-	        print("🔁 เล่นรอบใหม่แล้ว!")
-	    else
-	        warn("❌ ไม่สามารถเล่นใหม่ได้:", err)
-	    end
+	-- 🔁 เล่นใหม่เมื่อจบเกม (ใส่ cooldown กัน spam)
+	if autoPlayAgain and tick() - lastRestart > restartCooldown then
+		local success, err = pcall(function()
+			remotes.RestartGame:InvokeServer()
+		end)
+		if success then
+			lastRestart = tick()
+			print("🔁 เริ่มรอบใหม่แล้ว!")
+		else
+			warn("❌ เริ่มรอบใหม่ไม่สำเร็จ:", err)
+		end
 	end
+end)
 
--- 🎛️ ปุ่มลัดซ่อน UI
+-- 🎛️ ปุ่มลัดซ่อน UI (มีแค่ครั้งเดียว)
 local UIS = game:GetService("UserInputService")
 UIS.InputBegan:Connect(function(input, gp)
 	if not gp and input.KeyCode == Enum.KeyCode.RightShift then
 		Window:Toggle()
 	end
 end)
+
