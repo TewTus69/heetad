@@ -12,6 +12,28 @@ end)
 local Library = loadstring(game:HttpGet("https://raw.githubusercontent.com/xHeptc/Kavo-UI-Library/main/source.lua"))()
 local Window = Library.CreateLib("🌟 Macro Controller", "Midnight")
 
+-- 🪧 สร้าง Notification GUI
+local notification = Instance.new("TextLabel")
+notification.Parent = game:GetService("CoreGui")
+notification.Size = UDim2.new(0, 300, 0, 40)
+notification.Position = UDim2.new(0.5, -150, 0.05, 0)
+notification.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+notification.TextColor3 = Color3.fromRGB(255, 255, 255)
+notification.Font = Enum.Font.GothamBold
+notification.TextSize = 18
+notification.Visible = false
+notification.Text = ""
+Instance.new("UICorner", notification)
+
+-- 🧃 ฟังก์ชันแจ้งเตือน
+local function notify(msg)
+	notification.Text = msg
+	notification.Visible = true
+	task.delay(3, function()
+		notification.Visible = false
+	end)
+end
+
 -- 🔧 ตัวแปรหลัก
 local RS = game:GetService("RunService")
 local Rep = game:GetService("ReplicatedStorage")
@@ -120,7 +142,7 @@ RS.RenderStepped:Connect(function()
 			remotes.PlaceDifficultyVote:InvokeServer("dif_" .. currentMode:lower())
 		end)
 		if ok then
-			print("📌 เลือกโหมดแล้ว:", currentMode)
+			notify("📌 เลือกโหมดแล้ว:", currentMode)
 			autoStart = false
 		end
 	end
@@ -132,9 +154,9 @@ RS.RenderStepped:Connect(function()
 		end)
 		if success then
 			lastRestart = tick()
-			print("🔁 เริ่มรอบใหม่แล้ว!")
+			notify("🔁 เริ่มรอบใหม่แล้ว!")
 		else
-			warn("❌ เริ่มรอบใหม่ไม่สำเร็จ:", err)
+			notify("❌ เริ่มรอบใหม่ไม่สำเร็จ: " .. tostring(err))
 		end
 	end
 end)
