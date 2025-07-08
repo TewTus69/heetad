@@ -94,11 +94,30 @@ end)
 mainSec:NewToggle("🔁 Auto Play Again", "รีสตาร์ทเมื่อจบเกม", function(state)
 	autoPlayAgain = state
 	notify("🔁 Auto Play Again: " .. tostring(state))
+
 	if state then
-		pcall(function()
-			remotes.RestartGame:InvokeServer()
-			lastRestart = tick()
+		-- เรียก Restart ทันทีเมื่อเปิด toggle
+		local success, err = pcall(function()
+			game:GetService("ReplicatedStorage")
+				:WaitForChild("RemoteFunctions")
+				:WaitForChild("RestartGame")
+				:InvokeServer()
 		end)
+
+		if success then
+			notify("🔁 รีสตาร์ทเกมทันทีเรียบร้อย!")
+		else
+			notify("⚠️ รีสตาร์ททันทีล้มเหลว: " .. tostring(err))
+		end
+
+		-- 🔁 เริ่ม loop ทุกวินาที
+		coroutine.wrap(function()
+			while autoPlayAgain do
+				-- ตรงนี้คือ logic ที่จะให้เช็คทุก 1 วิ
+				print("[LOOP] ตรวจทุก 1 วิ...")
+				wait(1)
+			end
+		end)()
 	end
 end)
 
@@ -109,12 +128,22 @@ end)
 
 -- ⚙️ Settings Tab
 Window:NewTab("Settings"):NewSection("🎯 Difficulty")
-	:NewDropdown("Mode", "เลือกระดับ", {"dif_easy", "dif_normal", "dif_hard", "dif_insane"}, function(opt)
-		currentMode = opt:sub(5)
+	:NewDropdown("Mode", "เลือกระดับเกม", {"dif_easy", "dif_normal", "dif_hard", "dif_insane"}, function(opt) 
+		currentMode = opt
 		notify("🎯 ตั้งค่าโหมด: " .. opt)
-		pcall(function()
-			remotes.PlaceDifficultyVote:InvokeServer(opt)
+
+		local success, err = pcall(function()
+			game:GetService("ReplicatedStorage")
+				:WaitForChild("RemoteFunctions")
+				:WaitForChild("PlaceDifficultyVote")
+				:InvokeServer(opt)
 		end)
+
+		if success then
+			notify("✅ เลือกโหมดสำเร็จ: " .. opt)
+		else
+			notify("⚠️ เลือกโหมดล้มเหลว: " .. tostring(err))
+		end
 	end)
 
 -- 📌 About Tab
