@@ -119,19 +119,19 @@ RS.RenderStepped:Connect(function()
 	end
 
 	-- 🔁 เล่นใหม่เมื่อจบเกม
-if autoPlayAgain then
-    local success, err = pcall(function()
-        game:GetService("ReplicatedStorage")
-            :WaitForChild("RemoteFunctions")
-            :WaitForChild("RestartGame")
-            :InvokeServer()
-    end)
-    if success then
-        print("🔁 เล่นรอบใหม่แล้ว!")
-    else
-        warn("❌ ไม่สามารถเล่นใหม่ได้:", err)
-    end
-end
+	if autoPlayAgain then
+	    local success, err = pcall(function()
+	        game:GetService("ReplicatedStorage")
+	            :WaitForChild("RemoteFunctions")
+	            :WaitForChild("RestartGame")
+	            :InvokeServer()
+	    end)
+	    if success then
+	        print("🔁 เล่นรอบใหม่แล้ว!")
+	    else
+	        warn("❌ ไม่สามารถเล่นใหม่ได้:", err)
+	    end
+	end
 
 -- 🎛️ ปุ่มลัดซ่อน UI
 local UIS = game:GetService("UserInputService")
