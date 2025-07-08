@@ -1,11 +1,12 @@
 -- 💥 ลบ GUI ซ้ำซ้อน
 pcall(function()
-	for _, gui in ipairs(gethui():GetChildren()) do
+	for _, gui in ipairs(game:GetService("CoreGui"):GetChildren()) do
 		if gui:IsA("ScreenGui") and gui:FindFirstChild("MainFrame") then
 			gui:Destroy()
 		end
 	end
 end)
+
 
 -- 🔱 โหลด Kavo UI
 local Library = loadstring(game:HttpGet("https://raw.githubusercontent.com/xHeptc/Kavo-UI-Library/main/source.lua"))()
