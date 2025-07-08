@@ -126,8 +126,9 @@ end)
 RS.RenderStepped:Connect(function()
 	-- 🧱 Auto Select Mode
 	if autoStart then
+		local modeArg = { "dif_" .. currentMode:lower() }
 		local ok, err = pcall(function()
-			remotes.PlaceDifficultyVote:InvokeServer("dif_" .. currentMode:lower())
+			remotes.PlaceDifficultyVote:InvokeServer(unpack(modeArg))
 		end)
 		if ok then
 			notify("✅ โหวตโหมด: " .. currentMode)
