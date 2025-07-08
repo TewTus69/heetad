@@ -42,7 +42,7 @@ local function notify(msg)
 	task.delay(3, function() notification.Visible = false end)
 end
 
--- 🧾 Log UI
+-- 🧾 Log Viewer
 local logFrame = Instance.new("ScrollingFrame")
 logFrame.Name = "SpyLog"
 logFrame.Parent = game:GetService("CoreGui")
@@ -50,9 +50,9 @@ logFrame.Position = UDim2.new(0, 10, 0.5, -150)
 logFrame.Size = UDim2.new(0, 400, 0, 300)
 logFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
 logFrame.BorderSizePixel = 0
-logFrame.CanvasSize = UDim2.new(0, 0, 5, 0)
 logFrame.AutomaticCanvasSize = Enum.AutomaticSize.Y
 logFrame.ScrollBarThickness = 6
+logFrame.CanvasSize = UDim2.new(0, 0, 5, 0)
 Instance.new("UICorner", logFrame)
 
 local function log(text)
@@ -67,7 +67,7 @@ local function log(text)
 	line.Parent = logFrame
 end
 
--- 🕵️ Hook Remotes
+-- 🕵️ Hook Remote Logs
 local mt = getrawmetatable(game)
 local oldNamecall = mt.__namecall
 setreadonly(mt, false)
@@ -76,8 +76,8 @@ mt.__namecall = newcclosure(function(self, ...)
 	local method = getnamecallmethod()
 	local args = {...}
 	if method == "FireServer" or method == "InvokeServer" then
-		local success, result = pcall(function() return self.Name end)
-		if success and typeof(args) == "table" then
+		local success = pcall(function() return self.Name end)
+		if success then
 			local argStrs = {}
 			for _, v in ipairs(args) do
 				table.insert(argStrs, typeof(v) == "string" and '"'..v..'"' or tostring(v))
@@ -87,9 +87,10 @@ mt.__namecall = newcclosure(function(self, ...)
 	end
 	return oldNamecall(self, ...)
 end)
+
 setreadonly(mt, true)
 
--- 🗂️ UI Tabs
+-- 🗂️ UI: Main Tab
 local main = Window:NewTab("Main"):NewSection("🎮 Macro")
 
 main:NewButton("⏺️ Start Record", "เริ่มบันทึก", function()
@@ -128,6 +129,7 @@ main:NewToggle("🧱 Auto Select Mode", "โหวตโหมดอัตโน
 	notify("🧱 Auto Mode: " .. tostring(state))
 end)
 
+-- ⚙️ UI: Settings Tab
 Window:NewTab("Settings"):NewSection("🎯 Difficulty")
 	:NewDropdown("Mode", "เลือกระดับ", {"dif_easy", "dif_normal", "dif_hard", "dif_insane"}, function(opt)
 		currentMode = opt
@@ -137,9 +139,10 @@ Window:NewTab("Settings"):NewSection("🎯 Difficulty")
 		end)
 	end)
 
+-- 👩‍💻 UI: About Tab
 Window:NewTab("About"):NewSection("👩‍💻 Created by"):NewLabel("ไออ้วง x เค้าเอง 🐬")
 
--- 🎮 Hook Macro Record
+-- 🔄 Hook Macro Record
 local function hookRemote(name, handler)
 	local old = remotes[name].InvokeServer
 	remotes[name].InvokeServer = function(_, ...)
@@ -149,22 +152,21 @@ local function hookRemote(name, handler)
 end
 
 hookRemote("PlaceUnit", function(unit, data)
-	table.insert(macroData, {type = "place", unit = unit, data = data, delay = 0.3})
+	table.insert(macroData, { type = "place", unit = unit, data = data, delay = 0.3 })
 end)
 
 hookRemote("UpgradeUnit", function(unitId)
-	table.insert(macroData, {type = "upgrade", unitId = unitId, delay = 0.25})
+	table.insert(macroData, { type = "upgrade", unitId = unitId, delay = 0.25 })
 end)
 
 hookRemote("SellUnit", function(unitId)
-	table.insert(macroData, {type = "sell", unitId = unitId, delay = 0.25})
+	table.insert(macroData, { type = "sell", unitId = unitId, delay = 0.25 })
 end)
 
--- 🔁 Loop Auto Vote + Auto Restart
+-- 🔁 Loop: Auto Restart & Auto Vote
 task.spawn(function()
 	while true do
 		task.wait(1)
-
 		if autoStart then
 			pcall(function()
 				remotes.PlaceDifficultyVote:InvokeServer(currentMode)
