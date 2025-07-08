@@ -7,25 +7,29 @@ pcall(function()
 	end
 end)
 
-
 -- 🔱 โหลด Kavo UI
 local Library = loadstring(game:HttpGet("https://raw.githubusercontent.com/xHeptc/Kavo-UI-Library/main/source.lua"))()
-local Window = Library.CreateLib("🌟 Macro Controller", "Midnight")
+local Window = Library.CreateLib("🌊 Macro Controller", "Ocean")
 
--- 🪧 สร้าง Notification GUI
+-- ⚙️ บริการที่ใช้
+local RS = game:GetService("RunService")
+local UIS = game:GetService("UserInputService")
+local Rep = game:GetService("ReplicatedStorage")
+local remotes = Rep:WaitForChild("RemoteFunctions")
+
+-- 🪧 Notification แบบเรียบหรู
 local notification = Instance.new("TextLabel")
 notification.Parent = game:GetService("CoreGui")
 notification.Size = UDim2.new(0, 300, 0, 40)
 notification.Position = UDim2.new(0.5, -150, 0.05, 0)
-notification.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+notification.BackgroundColor3 = Color3.fromRGB(20, 60, 80)
 notification.TextColor3 = Color3.fromRGB(255, 255, 255)
 notification.Font = Enum.Font.GothamBold
 notification.TextSize = 18
-notification.Visible = false
 notification.Text = ""
+notification.Visible = false
 Instance.new("UICorner", notification)
 
--- 🧃 ฟังก์ชันแจ้งเตือน
 local function notify(msg)
 	notification.Text = msg
 	notification.Visible = true
@@ -35,63 +39,72 @@ local function notify(msg)
 end
 
 -- 🔧 ตัวแปรหลัก
-local RS = game:GetService("RunService")
-local Rep = game:GetService("ReplicatedStorage")
-local remotes = Rep:WaitForChild("RemoteFunctions")
-
 local macroData = {}
 local isRecording = false
 local isPlaying = false
 local autoPlayAgain = false
 local autoStart = false
 local currentMode = "Normal"
+local lastRestart = 0
+local restartCooldown = 10
 
 -- 📁 แท็บ Main
-local MainTab = Window:NewTab("Main")
-local MacroSection = MainTab:NewSection("🎮 Macro Control")
+local mainTab = Window:NewTab("Main")
+local section = mainTab:NewSection("🎮 Macro Control")
 
-MacroSection:NewToggle("⏺️ Record", "บันทึกแมโคร", function(state)
-	isRecording = state
+section:NewButton("⏺️ Start Record", "เริ่มบันทึกแมโคร", function()
+	macroData = {}
+	isRecording = true
+	notify("⏺️ เริ่มบันทึกแล้ว")
 end)
 
-MacroSection:NewToggle("▶️ Play Macro", "เล่นแมโครบันทึกไว้", function(state)
-	isPlaying = state
-	if state then
-		coroutine.wrap(function()
-			for _, act in ipairs(macroData) do
-				task.wait(act.delay or 0.5)
-				if act.type == "place" then
-					remotes.PlaceUnit:InvokeServer(act.unit, act.data)
-				elseif act.type == "upgrade" then
-					remotes.UpgradeUnit:InvokeServer(act.unitId)
-				elseif act.type == "sell" then
-					remotes.SellUnit:InvokeServer(act.unitId)
-				end
+section:NewButton("🛑 Stop Record", "หยุดบันทึก", function()
+	isRecording = false
+	notify("🛑 หยุดบันทึกแล้ว")
+end)
+
+section:NewButton("▶️ Play Macro", "เล่นข้อมูลที่บันทึก", function()
+	if #macroData == 0 then return notify("⚠️ ยังไม่มีข้อมูลแมโคร") end
+	isPlaying = true
+	notify("▶️ เริ่มเล่นแมโคร")
+	coroutine.wrap(function()
+		for _, act in ipairs(macroData) do
+			task.wait(act.delay or 0.5)
+			if act.type == "place" then
+				remotes.PlaceUnit:InvokeServer(act.unit, act.data)
+			elseif act.type == "upgrade" then
+				remotes.UpgradeUnit:InvokeServer(act.unitId)
+			elseif act.type == "sell" then
+				remotes.SellUnit:InvokeServer(act.unitId)
 			end
-		end)()
-	end
+		end
+		isPlaying = false
+	end)()
 end)
 
-MacroSection:NewToggle("🔁 Auto Play Again", "เล่นใหม่อัตโนมัติ", function(state)
+section:NewToggle("🔁 Auto Play Again", "รีสตาร์ทเกมอัตโนมัติ", function(state)
 	autoPlayAgain = state
+	notify("🔁 Auto Play Again: " .. tostring(state))
 end)
 
-MacroSection:NewToggle("🧱 Auto Start Unit", "วางยูนิตอัตโนมัติเมื่อเริ่มใหม่", function(state)
+section:NewToggle("🧱 Auto Select Mode", "เลือกระดับเกมอัตโนมัติ", function(state)
 	autoStart = state
+	notify("🧱 Auto Mode: " .. tostring(state))
 end)
 
--- ⚙️ Settings
-local SettingsTab = Window:NewTab("Settings")
-local s = SettingsTab:NewSection("⚙️ Difficulty")
-s:NewDropdown("Select Mode", "เลือกระดับ", {"Easy", "Normal", "Hard", "Insane"}, function(opt)
-	currentMode = opt
-end)
+-- ⚙️ แท็บ Settings
+local settingsTab = Window:NewTab("Settings")
+settingsTab:NewSection("⚙️ Difficulty")
+	:NewDropdown("Mode", "เลือกระดับ", {"Easy", "Normal", "Hard", "Insane"}, function(opt)
+		currentMode = opt
+		notify("⚙️ ตั้งค่าโหมด: " .. opt)
+	end)
 
--- 📌 About
-local info = Window:NewTab("About"):NewSection("📌 Info")
-info:NewLabel("สร้างโดยไออ้วงและเค้าเอง ❤️")
+-- 📌 แท็บ About
+Window:NewTab("About"):NewSection("✦ Info")
+	:NewLabel("สร้างโดยไออ้วงและเค้าเอง 💙")
 
--- 🧠 Hook Remote (Record จากการวาง)
+-- 🎮 Hook Remote สำหรับบันทึก
 local oldPlace = remotes.PlaceUnit.InvokeServer
 remotes.PlaceUnit.InvokeServer = function(_, unit, data)
 	if isRecording then
@@ -105,7 +118,6 @@ remotes.PlaceUnit.InvokeServer = function(_, unit, data)
 	return oldPlace(remotes.PlaceUnit, unit, data)
 end
 
--- Hook อัปเกรด
 local oldUpgrade = remotes.UpgradeUnit.InvokeServer
 remotes.UpgradeUnit.InvokeServer = function(_, unitId)
 	if isRecording then
@@ -118,7 +130,6 @@ remotes.UpgradeUnit.InvokeServer = function(_, unitId)
 	return oldUpgrade(remotes.UpgradeUnit, unitId)
 end
 
--- Hook ขาย
 local oldSell = remotes.SellUnit.InvokeServer
 remotes.SellUnit.InvokeServer = function(_, unitId)
 	if isRecording then
@@ -131,41 +142,34 @@ remotes.SellUnit.InvokeServer = function(_, unitId)
 	return oldSell(remotes.SellUnit, unitId)
 end
 
--- 🕓 ตัวแปรสำหรับ cooldown การ restart
-local lastRestart = 0
-local restartCooldown = 10  -- วินาที
-
+-- 🕹️ RenderStep ตรวจจับโหมดและเล่นซ้ำ
 RS.RenderStepped:Connect(function()
-	-- 🎯 โหวตโหมดเมื่อเริ่มเกมใหม่
 	if autoStart then
 		local ok = pcall(function()
 			remotes.PlaceDifficultyVote:InvokeServer("dif_" .. currentMode:lower())
 		end)
 		if ok then
-			notify("📌 เลือกโหมดแล้ว:", currentMode)
+			notify("✅ โหวตโหมด " .. currentMode)
 			autoStart = false
 		end
 	end
 
-	-- 🔁 เล่นใหม่เมื่อจบเกม (ใส่ cooldown กัน spam)
 	if autoPlayAgain and tick() - lastRestart > restartCooldown then
 		local success, err = pcall(function()
 			remotes.RestartGame:InvokeServer()
 		end)
 		if success then
 			lastRestart = tick()
-			notify("🔁 เริ่มรอบใหม่แล้ว!")
+			notify("🔁 รีสตาร์ทเกมสำเร็จ!")
 		else
-			notify("❌ เริ่มรอบใหม่ไม่สำเร็จ: " .. tostring(err))
+			notify("⚠️ รีสตาร์ทล้มเหลว: " .. tostring(err))
 		end
 	end
 end)
 
--- 🎛️ ปุ่มลัดซ่อน UI (มีแค่ครั้งเดียว)
-local UIS = game:GetService("UserInputService")
+-- ⌨️ ซ่อน/แสดง UI
 UIS.InputBegan:Connect(function(input, gp)
 	if not gp and input.KeyCode == Enum.KeyCode.RightShift then
 		Window:Toggle()
 	end
 end)
-
