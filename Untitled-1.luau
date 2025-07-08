@@ -119,7 +119,7 @@ Window:NewTab("Settings"):NewSection("🎯 Difficulty")
 -- 📌 Info
 Window:NewTab("About"):NewSection("👩‍💻 Created by"):NewLabel("ไออ้วง x เค้าเอง 🐬")
 
--- 🔁 Loop ตรวจจับจบเกม
+-- 🔁 Auto Function
 RS.RenderStepped:Connect(function()
 	if autoStart then
 		local ok = pcall(function()
@@ -132,28 +132,43 @@ RS.RenderStepped:Connect(function()
 	end
 
 	if autoPlayAgain and tick() - lastRestart > restartCooldown then
+		local guiFound = false
+
 		for _, ui in ipairs(Players.LocalPlayer.PlayerGui:GetDescendants()) do
 			if ui:IsA("TextLabel") and ui.Text then
 				local text = ui.Text:lower()
-				if text:find("wave lost") or text:find("defeat") or text:find("overwhelmed") then
-					pcall(function()
-						local re = Rep:FindFirstChild("ReNotifyEvent")
-						if re then
-							re:FireServer("NotificationOptionSelected", nil, "Timedout")
-						end
-						task.wait(0.4)
-						remotes.RestartGame:InvokeServer()
-						lastRestart = tick()
-						notify("🔁 เริ่มรอบใหม่สำเร็จ")
-					end)
+				if text:find("overwhelmed") or text:find("timeout") or text:find("defeat") or text:find("wave lost") then
+					guiFound = true
 					break
 				end
+			end
+		end
+
+		if guiFound then
+			local reNotify = Rep:FindFirstChild("ReNotifyEvent")
+			if reNotify then
+				pcall(function()
+					reNotify:FireServer("NotificationOptionSelected", nil, "Timedout")
+				end)
+			end
+
+			wait(0.5)
+
+			local success, err = pcall(function()
+				remotes.RestartGame:InvokeServer()
+			end)
+
+			if success then
+				lastRestart = tick()
+				notify("🔁 เริ่มรอบใหม่อัตโนมัติแล้ว!")
+			else
+				notify("⚠️ รีสตาร์ทล้มเหลว: " .. tostring(err))
 			end
 		end
 	end
 end)
 
--- ⌨️ RightShift toggle UI
+-- ⌨️ Toggle UI
 UIS.InputBegan:Connect(function(input, gp)
 	if not gp and input.KeyCode == Enum.KeyCode.RightShift then
 		Window:Toggle()
