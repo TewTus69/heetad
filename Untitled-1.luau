@@ -84,6 +84,22 @@ end)
 mainSec:NewToggle("🔁 Auto Play Again", "รีสตาร์ทเมื่อจบเกม", function(state)
 	autoPlayAgain = state
 	notify("🔁 Auto Play Again: " .. tostring(state))
+
+	if state then
+		-- เรียก Restart ทันทีเมื่อเปิด toggle
+		local success, err = pcall(function()
+			game:GetService("ReplicatedStorage")
+				:WaitForChild("RemoteFunctions")
+				:WaitForChild("RestartGame")
+				:InvokeServer()
+		end)
+
+		if success then
+			notify("🔁 รีสตาร์ทเกมทันทีเรียบร้อย!")
+		else
+			notify("⚠️ รีสตาร์ททันทีล้มเหลว: " .. tostring(err))
+		end
+	end
 end)
 
 mainSec:NewToggle("🧱 Auto Select Mode", "เลือกระดับอัตโนมัติ", function(state)
