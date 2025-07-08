@@ -157,32 +157,42 @@ RS.RenderStepped:Connect(function()
 		end
 	end
 
-	-- 🔁 รีสตาร์ทเกมอัตโนมัติเมื่อมีข้อความ Timeout
+	-- 🔁 รีสตาร์ทเกมอัตโนมัติเมื่อจบเกม
 	if autoPlayAgain and tick() - lastRestart > restartCooldown then
 		pcall(function()
+			local guiFound = false
 			for _, ui in ipairs(game.Players.LocalPlayer.PlayerGui:GetDescendants()) do
-				if ui:IsA("TextLabel") and ui.Text and ui.Text:lower():find("overwhelmed") then
-					-- 🔔 พบข้อความแจ้งเตือน
-					local reNotify = game:GetService("ReplicatedStorage"):FindFirstChild("ReNotifyEvent")
-					if reNotify then
-						reNotify:FireServer("NotificationOptionSelected", nil, "Timedout")
+				if ui:IsA("TextLabel") and ui.Text then
+					local text = ui.Text:lower()
+					if text:find("overwhelmed") or text:find("defeat") or text:find("wave lost") then
+						guiFound = true
+						break
 					end
-					
-					wait(0.5)
-
-					-- 🔁 พยายามรีสตาร์ทเกม
-					local ok, err = pcall(function()
-						remotes.RestartGame:InvokeServer()
-					end)
-
-					if ok then
-						lastRestart = tick()
-						notify("🔁 เริ่มรอบใหม่สำเร็จ!")
-					else
-						notify("⚠️ ไม่สามารถเริ่มรอบใหม่ได้: " .. tostring(err))
-					end
-					
+				elseif ui:IsA("TextButton") and ui.Text and ui.Text:lower():find("play again") then
+					guiFound = true
 					break
+				end
+			end
+
+			if guiFound then
+				local reNotify = game:GetService("ReplicatedStorage"):FindFirstChild("ReNotifyEvent")
+				if reNotify then
+					pcall(function()
+						reNotify:FireServer("NotificationOptionSelected", nil, "Timedout")
+					end)
+				end
+
+				wait(0.5)
+
+				local ok, err = pcall(function()
+					remotes.RestartGame:InvokeServer()
+				end)
+
+				if ok then
+					lastRestart = tick()
+					notify("🔁 เริ่มรอบใหม่แล้ว!")
+				else
+					notify("⚠️ รีสตาร์ทล้มเหลว: " .. tostring(err))
 				end
 			end
 		end)
