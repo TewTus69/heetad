@@ -19,13 +19,15 @@ local Rep = game:GetService("ReplicatedStorage")
 local remotes = Rep:WaitForChild("RemoteFunctions")
 
 -- 🪧 Notification
-local notification = Instance.new("TextLabel", game:GetService("CoreGui"))
+local notification = Instance.new("TextLabel")
+notification.Parent = game:GetService("CoreGui")
 notification.Size = UDim2.new(0, 320, 0, 40)
 notification.Position = UDim2.new(0.5, -160, 0.05, 0)
 notification.BackgroundColor3 = Color3.fromRGB(30, 60, 90)
-notification.TextColor3 = Color3.new(1, 1, 1)
+notification.TextColor3 = Color3.fromRGB(255, 255, 255)
 notification.Font = Enum.Font.GothamBold
 notification.TextSize = 18
+notification.Text = ""
 notification.Visible = false
 Instance.new("UICorner", notification)
 
@@ -35,13 +37,101 @@ local function notify(msg)
 	task.delay(3, function() notification.Visible = false end)
 end
 
--- 🌟 ตัวแปร
-local macroData, isRecording, isPlaying = {}, false, false
-local autoPlayAgain, autoStart = false, false
-local currentMode = "normal"
-local lastRestart, restartCooldown = 0, 8
+-- 🧠 State
+local macroData = {}
+local isRecording = false
+local isPlaying = false
+local autoPlayAgain = false
+local autoStart = false
+local currentMode = "Normal"
+local lastRestart = 0
+local restartCooldown = 8
 
--- 🧠 Hook Macro
+-- 🗂️ Tab: Main
+local mainTab = Window:NewTab("Main")
+local mainSec = mainTab:NewSection("🎮 Macro")
+
+mainSec:NewButton("⏺️ Start Record", "บันทึกการวาง/อัพ/ขายยูนิต", function()
+	macroData = {}
+	isRecording = true
+	notify("⏺️ เริ่มบันทึกแล้ว")
+end)
+
+mainSec:NewButton("🛑 Stop Record", "หยุดบันทึกแมโคร", function()
+	isRecording = false
+	notify("🛑 หยุดบันทึกแล้ว")
+end)
+
+mainSec:NewButton("▶️ Play Macro", "เล่นซ้ำแมโคร", function()
+	if #macroData == 0 then return notify("⚠️ ยังไม่มีข้อมูลแมโคร") end
+	isPlaying = true
+	notify("▶️ เริ่มเล่นแมโคร")
+	coroutine.wrap(function()
+		for _, act in ipairs(macroData) do
+			task.wait(act.delay or 0.5)
+			if act.type == "place" then
+				remotes.PlaceUnit:InvokeServer(act.unit, act.data)
+			elseif act.type == "upgrade" then
+				remotes.UpgradeUnit:InvokeServer(act.unitId)
+			elseif act.type == "sell" then
+				remotes.SellUnit:InvokeServer(act.unitId)
+			end
+		end
+		isPlaying = false
+	end)()
+end)
+
+mainSec:NewToggle("🔁 Auto Play Again", "รีสตาร์ทเมื่อจบเกม", function(state)
+	autoPlayAgain = state
+	notify("🔁 Auto Play Again: " .. tostring(state))
+
+	if state then
+		-- เรียก Restart ทันทีเมื่อเปิด toggle
+		local success, err = pcall(function()
+			game:GetService("ReplicatedStorage")
+				:WaitForChild("RemoteFunctions")
+				:WaitForChild("RestartGame")
+				:InvokeServer()
+		end)
+
+		if success then
+			notify("🔁 รีสตาร์ทเกมทันทีเรียบร้อย!")
+		else
+			notify("⚠️ รีสตาร์ททันทีล้มเหลว: " .. tostring(err))
+		end
+	end
+end)
+
+mainSec:NewToggle("🧱 Auto Select Mode", "เลือกระดับอัตโนมัติ", function(state)
+	autoStart = state
+	notify("🧱 Auto Select Mode: " .. tostring(state))
+end)
+
+-- ⚙️ Tab: Settings
+Window:NewTab("Settings"):NewSection("🎯 Difficulty")
+	:NewDropdown("Mode", "เลือกระดับเกม", {"dif_easy", "dif_normal", "dif_hard", "dif_insane"}, function(opt) 
+		currentMode = opt
+		notify("🎯 ตั้งค่าโหมด: " .. opt)
+
+		-- เรียก Remote ทันทีเมื่อเลือก
+		local success, err = pcall(function()
+			game:GetService("ReplicatedStorage")
+				:WaitForChild("RemoteFunctions")
+				:WaitForChild("PlaceDifficultyVote")
+				:InvokeServer(opt)  -- ใช้ opt แทน args
+		end)
+
+		if success then
+			notify("✅ เลือกโหมดสำเร็จ: " .. opt)
+		else
+			notify("⚠️ เลือกโหมดล้มเหลว: " .. tostring(err))
+		end
+	end)
+
+-- 📌 About
+Window:NewTab("About"):NewSection("📌 Created by"):NewLabel("ไออ้วง x เค้าเอง 🩵")
+
+-- 🎮 Hook Recording
 local function hookRemote(name, handler)
 	local old = remotes[name].InvokeServer
 	remotes[name].InvokeServer = function(_, ...)
@@ -51,99 +141,50 @@ local function hookRemote(name, handler)
 end
 
 hookRemote("PlaceUnit", function(unit, data)
-	table.insert(macroData, {type = "place", unit = unit, data = data, delay = 0.3})
+	table.insert(macroData, { type = "place", unit = unit, data = data, delay = 0.3 })
 end)
+
 hookRemote("UpgradeUnit", function(unitId)
-	table.insert(macroData, {type = "upgrade", unitId = unitId, delay = 0.25})
+	table.insert(macroData, { type = "upgrade", unitId = unitId, delay = 0.25 })
 end)
+
 hookRemote("SellUnit", function(unitId)
-	table.insert(macroData, {type = "sell", unitId = unitId, delay = 0.25})
+	table.insert(macroData, { type = "sell", unitId = unitId, delay = 0.25 })
 end)
 
--- 📂 Main Tab
-local mainTab = Window:NewTab("Main")
-local main = mainTab:NewSection("🎮 Macro")
-
-main:NewButton("⏺️ Start Record", "เริ่มบันทึก", function()
-	macroData, isRecording = {}, true
-	notify("⏺️ กำลังบันทึก...")
-end)
-
-main:NewButton("🛑 Stop Record", "หยุดบันทึก", function()
-	isRecording = false
-	notify("🛑 หยุดบันทึกแล้ว")
-end)
-
-main:NewButton("▶️ Play Macro", "เล่นแมโคร", function()
-	if #macroData == 0 then return notify("⚠️ ยังไม่มีข้อมูลแมโคร") end
-	isPlaying = true
-	notify("▶️ เริ่มเล่นแมโคร")
-	coroutine.wrap(function()
-		for _, a in ipairs(macroData) do
-			task.wait(a.delay or 0.5)
-			if a.type == "place" then remotes.PlaceUnit:InvokeServer(a.unit, a.data)
-			elseif a.type == "upgrade" then remotes.UpgradeUnit:InvokeServer(a.unitId)
-			elseif a.type == "sell" then remotes.SellUnit:InvokeServer(a.unitId)
-			end
-		end
-		isPlaying = false
-	end)()
-end)
-
-main:NewToggle("🔁 Auto Play Again", "รีสตาร์ทเมื่อจบเกม", function(state)
-	autoPlayAgain = state
-	notify("🔁 Auto Restart: " .. tostring(state))
-	if state then
-		pcall(function()
-			remotes.RestartGame:InvokeServer()
-			lastRestart = tick()
-		end)
-	end
-end)
-
-main:NewToggle("🧱 Auto Select Mode", "โหวตโหมดอัตโนมัติ", function(state)
-	autoStart = state
-	notify("🧱 Auto Mode: " .. tostring(state))
-end)
-
--- ⚙️ Settings
-Window:NewTab("Settings"):NewSection("🎯 Difficulty")
-	:NewDropdown("Mode", "เลือกระดับ", {"dif_easy", "dif_normal", "dif_hard", "dif_insane"}, function(opt)
-		currentMode = opt:sub(5)
-		notify("🎯 ตั้งค่าโหมด: " .. opt)
-		pcall(function()
-			remotes.PlaceDifficultyVote:InvokeServer(opt)
-		end)
-	end)
-
--- 📌 Info
-Window:NewTab("About"):NewSection("👩‍💻 Created by"):NewLabel("ไออ้วง x เค้าเอง 🐬")
-
--- 🔁 Loop ตรวจจับ Timeout และ ReFire ไม่สน UUID
+-- 🔁 Auto Restart Handler
 RS.RenderStepped:Connect(function()
+	-- 🧱 Auto Select Mode
 	if autoStart then
-		local ok = pcall(function()
-			remotes.PlaceDifficultyVote:InvokeServer("dif_" .. currentMode:lower())
+		local modeArg = { "dif_" .. currentMode:lower() }
+		local ok, err = pcall(function()
+			remotes.PlaceDifficultyVote:InvokeServer(unpack(modeArg))
 		end)
 		if ok then
 			notify("✅ โหวตโหมด: " .. currentMode)
 			autoStart = false
+		else
+			notify("⚠️ โหวตโหมดล้มเหลว: " .. tostring(err))
 		end
 	end
 
+	-- 🔁 Auto Play Again
 	if autoPlayAgain and tick() - lastRestart > restartCooldown then
-		local guiFound = false
+		local found = false
 		for _, ui in ipairs(Players.LocalPlayer.PlayerGui:GetDescendants()) do
 			if ui:IsA("TextLabel") and ui.Text then
 				local text = ui.Text:lower()
-				if text:find("overwhelmed") or text:find("timeout") or text:find("defeat") or text:find("wave lost") then
-					guiFound = true
+				if text:find("wave lost") or text:find("defeat") or text:find("overwhelmed") then
+					found = true
 					break
 				end
+			elseif ui:IsA("TextButton") and ui.Text:lower():find("play again") then
+				found = true
+				break
 			end
 		end
 
-		if guiFound then
+		if found then
 			local reNotify = Rep:FindFirstChild("ReNotifyEvent")
 			if reNotify then
 				pcall(function()
@@ -151,15 +192,15 @@ RS.RenderStepped:Connect(function()
 				end)
 			end
 
-			wait(0.5)
+			task.wait(0.3)
 
-			local success, err = pcall(function()
+			local ok, err = pcall(function()
 				remotes.RestartGame:InvokeServer()
 			end)
 
-			if success then
+			if ok then
 				lastRestart = tick()
-				notify("🔁 เริ่มรอบใหม่อัตโนมัติแล้ว!")
+				notify("🔁 เริ่มรอบใหม่แล้ว!")
 			else
 				notify("⚠️ รีสตาร์ทล้มเหลว: " .. tostring(err))
 			end
@@ -167,7 +208,7 @@ RS.RenderStepped:Connect(function()
 	end
 end)
 
--- ⌨️ RightShift toggle UI
+-- ⌨️ ซ่อน/แสดง UI ด้วย RightShift
 UIS.InputBegan:Connect(function(input, gp)
 	if not gp and input.KeyCode == Enum.KeyCode.RightShift then
 		Window:Toggle()
