@@ -1,149 +1,137 @@
--- 💥 เคลียร์ GUI ซ้อน
+-- 💥 ลบ GUI ซ้ำซ้อน
 pcall(function()
-    for _, gui in ipairs(gethui():GetChildren()) do
-        if gui:IsA("ScreenGui") and gui:FindFirstChild("MainFrame") then
-            gui:Destroy()
-        end
-    end
+	for _, gui in ipairs(gethui():GetChildren()) do
+		if gui:IsA("ScreenGui") and gui:FindFirstChild("MainFrame") then
+			gui:Destroy()
+		end
+	end
 end)
 
 -- 🔱 โหลด Kavo UI
 local Library = loadstring(game:HttpGet("https://raw.githubusercontent.com/xHeptc/Kavo-UI-Library/main/source.lua"))()
 local Window = Library.CreateLib("🌟 Macro Controller", "Midnight")
 
--- 📁 ตัวแปรหลัก
-local UIS = game:GetService("UserInputService")
-local VIM = game:GetService("VirtualInputManager")
-local Mouse = game.Players.LocalPlayer:GetMouse()
+-- 🔧 ตัวแปรหลัก
 local RS = game:GetService("RunService")
+local Rep = game:GetService("ReplicatedStorage")
+local remotes = Rep:WaitForChild("RemoteFunctions")
 
-local macro = {}
-local recording = false
-local playing = false
+local macroData = {}
+local isRecording = false
+local isPlaying = false
 local autoPlayAgain = false
-local lastTime = tick()
+local autoStart = false
+local currentMode = "Normal"
 
--- 🎬 ระบบ Record
-UIS.InputBegan:Connect(function(input, gpe)
-    if not gpe and recording then
-        if input.UserInputType == Enum.UserInputType.Keyboard then
-            table.insert(macro, {
-                time = tick() - lastTime,
-                type = "key",
-                key = input.KeyCode.Name
-            })
-            lastTime = tick()
-        end
-    end
-end)
-
-Mouse.Button1Down:Connect(function()
-    if recording then
-        table.insert(macro, {
-            time = tick() - lastTime,
-            type = "click",
-            position = Mouse.Hit.Position
-        })
-        lastTime = tick()
-    end
-end)
-
--- 🔁 ระบบ Playback
-local function playMacro()
-    if playing or #macro == 0 then return end
-    playing = true
-
-    coroutine.wrap(function()
-        for _, action in ipairs(macro) do
-            task.wait(action.time)
-            if action.type == "key" then
-                VIM:SendKeyEvent(true, Enum.KeyCode[action.key], false, game)
-                VIM:SendKeyEvent(false, Enum.KeyCode[action.key], false, game)
-            elseif action.type == "click" and action.position then
-                VIM:SendMouseButtonEvent(action.position.X, action.position.Y, 0, true, game, 0)
-                VIM:SendMouseButtonEvent(action.position.X, action.position.Y, 0, false, game, 0)
-            end
-        end
-        playing = false
-    end)()
-end
-
--- ▶️ Auto Play Again
-local function tryPlayAgain()
-    for _, d in pairs(game:GetDescendants()) do
-        if d:IsA("TextButton") and d.Text:lower():find("play again") then
-            firesignal(d.MouseButton1Click)
-            break
-        end
-    end
-end
-
--- 📌 UI Setup
+-- 📁 แท็บ Main
 local MainTab = Window:NewTab("Main")
-local MacroSection = MainTab:NewSection("🎮 Macro Controls")
+local MacroSection = MainTab:NewSection("🎮 Macro Control")
 
-MacroSection:NewButton("▶️ Start Macro", "เริ่มใหม่", function()
-    macro = {}
-    lastTime = tick()
+MacroSection:NewToggle("⏺️ Record", "บันทึกแมโคร", function(state)
+	isRecording = state
 end)
 
-MacroSection:NewButton("🔁 Play Macro", "เล่นซ้ำ", function()
-    playMacro()
+MacroSection:NewToggle("▶️ Play Macro", "เล่นแมโครบันทึกไว้", function(state)
+	isPlaying = state
+	if state then
+		coroutine.wrap(function()
+			for _, act in ipairs(macroData) do
+				task.wait(act.delay or 0.5)
+				if act.type == "place" then
+					remotes.PlaceUnit:InvokeServer(act.unit, act.data)
+				elseif act.type == "upgrade" then
+					remotes.UpgradeUnit:InvokeServer(act.unitId)
+				elseif act.type == "sell" then
+					remotes.SellUnit:InvokeServer(act.unitId)
+				end
+			end
+		end)()
+	end
 end)
 
-MacroSection:NewToggle("⏺️ Record", "บันทึก", function(state)
-    recording = state
-    lastTime = tick()
+MacroSection:NewToggle("🔁 Auto Play Again", "เล่นใหม่อัตโนมัติ", function(state)
+	autoPlayAgain = state
 end)
 
-MacroSection:NewToggle("🔂 Auto Play Again", "คลิกปุ่มให้", function(state)
-    autoPlayAgain = state
+MacroSection:NewToggle("🧱 Auto Start Unit", "วางยูนิตอัตโนมัติเมื่อเริ่มใหม่", function(state)
+	autoStart = state
 end)
 
 -- ⚙️ Settings
 local SettingsTab = Window:NewTab("Settings")
-SettingsSection:NewDropdown("Select Mode", "เลือกโหมด", {"Easy", "Normal", "Hard", "Insane"}, function(selected)
-    currentMode = selected
-
-    -- ลูปหาปุ่มโดยดูจากชื่อ
-    for _, btn in ipairs(game:GetDescendants()) do
-        if btn:IsA("ImageButton") and btn.Name:lower():find(selected:lower()) then
-            firesignal(btn.MouseButton1Click)
-            print("✔️ คลิกโหมด:", selected)
-            return
-        end
-    end
-
-    -- fallback: เผื่อมีปุ่มชื่อไม่ตรง แต่มี TextLabel ข้างใน
-    for _, btn in ipairs(game:GetDescendants()) do
-        if btn:IsA("ImageButton") then
-            local label = btn:FindFirstChildWhichIsA("TextLabel", true)
-            if label and label.Text:lower():find(selected:lower()) then
-                firesignal(btn.MouseButton1Click)
-                print("✔️ คลิกโหมดผ่าน label:", selected)
-                return
-            end
-        end
-    end
-
-    warn("❌ ไม่พบปุ่มที่ตรงกับโหมด:", selected)
+local s = SettingsTab:NewSection("⚙️ Difficulty")
+s:NewDropdown("Select Mode", "เลือกระดับ", {"Easy", "Normal", "Hard", "Insane"}, function(opt)
+	currentMode = opt
 end)
 
--- ℹ️ About
-local AboutTab = Window:NewTab("About")
-local Info = AboutTab:NewSection("📌 Info")
-Info:NewLabel("Macro by ไออ้วง & เค้า 💖")
+-- 📌 About
+local info = Window:NewTab("About"):NewSection("📌 Info")
+info:NewLabel("สร้างโดยไออ้วงและเค้าเอง ❤️")
 
--- 🎯 Hotkey Toggle UI
-local shown = true
-UIS.InputBegan:Connect(function(input, gp)
-    if not gp and input.KeyCode == Enum.KeyCode.RightShift then
-        local gui = gethui():FindFirstChild("MainFrame", true)
-        if gui then gui.Visible = not gui.Visible end
-    end
-end)
+-- 🧠 Hook Remote (Record จากการวาง)
+local oldPlace = remotes.PlaceUnit.InvokeServer
+remotes.PlaceUnit.InvokeServer = function(_, unit, data)
+	if isRecording then
+		table.insert(macroData, {
+			type = "place",
+			unit = unit,
+			data = data,
+			delay = 0.3
+		})
+	end
+	return oldPlace(remotes.PlaceUnit, unit, data)
+end
 
--- 🔁 วนตลอดระหว่างเล่น
+-- Hook อัปเกรด
+local oldUpgrade = remotes.UpgradeUnit.InvokeServer
+remotes.UpgradeUnit.InvokeServer = function(_, unitId)
+	if isRecording then
+		table.insert(macroData, {
+			type = "upgrade",
+			unitId = unitId,
+			delay = 0.2
+		})
+	end
+	return oldUpgrade(remotes.UpgradeUnit, unitId)
+end
+
+-- Hook ขาย
+local oldSell = remotes.SellUnit.InvokeServer
+remotes.SellUnit.InvokeServer = function(_, unitId)
+	if isRecording then
+		table.insert(macroData, {
+			type = "sell",
+			unitId = unitId,
+			delay = 0.2
+		})
+	end
+	return oldSell(remotes.SellUnit, unitId)
+end
+
+-- 🌐 ระบบ Auto
 RS.RenderStepped:Connect(function()
-    if autoPlayAgain then tryPlayAgain() end
+	-- 🎯 โหวตโหมดเมื่อเริ่มเกมใหม่
+	if autoStart then
+		local success, _ = pcall(function()
+			remotes.PlaceDifficultyVote:InvokeServer("dif_" .. currentMode:lower())
+		end)
+		if success then autoStart = false end
+	end
+
+	-- 🔁 เล่นใหม่เมื่อจบเกม
+	if autoPlayAgain then
+		for _, obj in ipairs(game:GetDescendants()) do
+			if obj:IsA("TextButton") and obj.Text:lower():find("play again") then
+				pcall(function() firesignal(obj.MouseButton1Click) end)
+			end
+		end
+	end
+end)
+
+-- 🎛️ ปุ่มลัดซ่อน UI
+local UIS = game:GetService("UserInputService")
+UIS.InputBegan:Connect(function(input, gp)
+	if not gp and input.KeyCode == Enum.KeyCode.RightShift then
+		Window:Toggle()
+	end
 end)
