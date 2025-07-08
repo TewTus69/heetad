@@ -144,28 +144,52 @@ end
 
 -- 🕹️ RenderStep ตรวจจับโหมดและเล่นซ้ำ
 RS.RenderStepped:Connect(function()
+	-- 🧱 โหวตโหมดเมื่อเริ่มใหม่
 	if autoStart then
-		local ok = pcall(function()
+		local ok, err = pcall(function()
 			remotes.PlaceDifficultyVote:InvokeServer("dif_" .. currentMode:lower())
 		end)
 		if ok then
 			notify("✅ โหวตโหมด " .. currentMode)
 			autoStart = false
+		else
+			notify("⚠️ โหวตโหมดล้มเหลว: " .. tostring(err))
 		end
 	end
 
+	-- 🔁 รีสตาร์ทเกมอัตโนมัติเมื่อมีข้อความ Timeout
 	if autoPlayAgain and tick() - lastRestart > restartCooldown then
-		local success, err = pcall(function()
-			remotes.RestartGame:InvokeServer()
+		pcall(function()
+			for _, ui in ipairs(game.Players.LocalPlayer.PlayerGui:GetDescendants()) do
+				if ui:IsA("TextLabel") and ui.Text and ui.Text:lower():find("overwhelmed") then
+					-- 🔔 พบข้อความแจ้งเตือน
+					local reNotify = game:GetService("ReplicatedStorage"):FindFirstChild("ReNotifyEvent")
+					if reNotify then
+						reNotify:FireServer("NotificationOptionSelected", nil, "Timedout")
+					end
+					
+					wait(0.5)
+
+					-- 🔁 พยายามรีสตาร์ทเกม
+					local ok, err = pcall(function()
+						remotes.RestartGame:InvokeServer()
+					end)
+
+					if ok then
+						lastRestart = tick()
+						notify("🔁 เริ่มรอบใหม่สำเร็จ!")
+					else
+						notify("⚠️ ไม่สามารถเริ่มรอบใหม่ได้: " .. tostring(err))
+					end
+					
+					break
+				end
+			end
 		end)
-		if success then
-			lastRestart = tick()
-			notify("🔁 รีสตาร์ทเกมสำเร็จ!")
-		else
-			notify("⚠️ รีสตาร์ทล้มเหลว: " .. tostring(err))
-		end
 	end
 end)
+
+
 
 -- ⌨️ ซ่อน/แสดง UI
 UIS.InputBegan:Connect(function(input, gp)
