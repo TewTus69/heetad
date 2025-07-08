@@ -102,9 +102,31 @@ end)
 
 -- ⚙️ Settings
 local SettingsTab = Window:NewTab("Settings")
-local SettingsSection = SettingsTab:NewSection("⚙️ Mode")
 SettingsSection:NewDropdown("Select Mode", "เลือกโหมด", {"Easy", "Normal", "Hard", "Insane"}, function(selected)
-    print("Selected Mode:", selected)
+    currentMode = selected
+
+    -- ลูปหาปุ่มโดยดูจากชื่อ
+    for _, btn in ipairs(game:GetDescendants()) do
+        if btn:IsA("ImageButton") and btn.Name:lower():find(selected:lower()) then
+            firesignal(btn.MouseButton1Click)
+            print("✔️ คลิกโหมด:", selected)
+            return
+        end
+    end
+
+    -- fallback: เผื่อมีปุ่มชื่อไม่ตรง แต่มี TextLabel ข้างใน
+    for _, btn in ipairs(game:GetDescendants()) do
+        if btn:IsA("ImageButton") then
+            local label = btn:FindFirstChildWhichIsA("TextLabel", true)
+            if label and label.Text:lower():find(selected:lower()) then
+                firesignal(btn.MouseButton1Click)
+                print("✔️ คลิกโหมดผ่าน label:", selected)
+                return
+            end
+        end
+    end
+
+    warn("❌ ไม่พบปุ่มที่ตรงกับโหมด:", selected)
 end)
 
 -- ℹ️ About
