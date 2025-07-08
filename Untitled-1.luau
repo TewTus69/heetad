@@ -1,4 +1,4 @@
--- 💥 ลบ Kavo UI ที่ค้าง
+-- 💥 เคลียร์ GUI ซ้อน
 pcall(function()
     for _, gui in ipairs(gethui():GetChildren()) do
         if gui:IsA("ScreenGui") and gui:FindFirstChild("MainFrame") then
@@ -11,93 +11,117 @@ end)
 local Library = loadstring(game:HttpGet("https://raw.githubusercontent.com/xHeptc/Kavo-UI-Library/main/source.lua"))()
 local Window = Library.CreateLib("🌟 Macro Controller", "Midnight")
 
--- 🧠 ตัวแปรเก็บสถานะ
-local isRecording = false
-local isAutoPlayAgain = false
-local macroData = {}
+-- 📁 ตัวแปรหลัก
+local UIS = game:GetService("UserInputService")
+local VIM = game:GetService("VirtualInputManager")
+local Mouse = game.Players.LocalPlayer:GetMouse()
+local RS = game:GetService("RunService")
+
+local macro = {}
+local recording = false
+local playing = false
+local autoPlayAgain = false
 local lastTime = tick()
-local currentMode = "Easy"
 
--- 🧠 ฟังก์ชันบันทึกการใช้งาน
-local function recordMacro()
-    local now = tick()
-    local mouse = game:GetService("Players").LocalPlayer:GetMouse()
-    table.insert(macroData, {
-        delay = now - lastTime,
-        pos = mouse.Hit and mouse.Hit.Position
-    })
-    lastTime = now
-end
-
--- 🧠 ฟังก์ชันเล่นซ้ำ
-local function playMacro()
-    coroutine.wrap(function()
-        for _, step in ipairs(macroData) do
-            task.wait(step.delay)
-            local tool = game.Players.LocalPlayer.Character and game.Players.LocalPlayer.Character:FindFirstChildOfClass("Tool")
-            if tool then tool:Activate() end
+-- 🎬 ระบบ Record
+UIS.InputBegan:Connect(function(input, gpe)
+    if not gpe and recording then
+        if input.UserInputType == Enum.UserInputType.Keyboard then
+            table.insert(macro, {
+                time = tick() - lastTime,
+                type = "key",
+                key = input.KeyCode.Name
+            })
+            lastTime = tick()
         end
+    end
+end)
+
+Mouse.Button1Down:Connect(function()
+    if recording then
+        table.insert(macro, {
+            time = tick() - lastTime,
+            type = "click",
+            position = Mouse.Hit.Position
+        })
+        lastTime = tick()
+    end
+end)
+
+-- 🔁 ระบบ Playback
+local function playMacro()
+    if playing or #macro == 0 then return end
+    playing = true
+
+    coroutine.wrap(function()
+        for _, action in ipairs(macro) do
+            task.wait(action.time)
+            if action.type == "key" then
+                VIM:SendKeyEvent(true, Enum.KeyCode[action.key], false, game)
+                VIM:SendKeyEvent(false, Enum.KeyCode[action.key], false, game)
+            elseif action.type == "click" and action.position then
+                VIM:SendMouseButtonEvent(action.position.X, action.position.Y, 0, true, game, 0)
+                VIM:SendMouseButtonEvent(action.position.X, action.position.Y, 0, false, game, 0)
+            end
+        end
+        playing = false
     end)()
 end
 
--- 🧠 ฟังก์ชัน Play Again
-local function autoPlayAgain()
-    for _, obj in pairs(game:GetDescendants()) do
-        if obj:IsA("TextButton") and obj.Text:lower():find("play again") then
-            firesignal(obj.MouseButton1Click)
+-- ▶️ Auto Play Again
+local function tryPlayAgain()
+    for _, d in pairs(game:GetDescendants()) do
+        if d:IsA("TextButton") and d.Text:lower():find("play again") then
+            firesignal(d.MouseButton1Click)
             break
         end
     end
 end
 
--- 📁 แท็บ Main
+-- 📌 UI Setup
 local MainTab = Window:NewTab("Main")
 local MacroSection = MainTab:NewSection("🎮 Macro Controls")
 
-MacroSection:NewButton("▶️ Start Macro", "ล้างและเริ่มบันทึกใหม่", function()
-    macroData = {}
+MacroSection:NewButton("▶️ Start Macro", "เริ่มใหม่", function()
+    macro = {}
     lastTime = tick()
 end)
 
-MacroSection:NewButton("🔁 Play Macro", "เล่นซ้ำทั้งหมด", function()
+MacroSection:NewButton("🔁 Play Macro", "เล่นซ้ำ", function()
     playMacro()
 end)
 
-MacroSection:NewToggle("⏺️ Record", "เปิด/ปิดการบันทึก", function(state)
-    isRecording = state
+MacroSection:NewToggle("⏺️ Record", "บันทึก", function(state)
+    recording = state
     lastTime = tick()
 end)
 
-MacroSection:NewToggle("🔂 Auto Play Again", "กดปุ่ม play again อัตโนมัติ", function(state)
-    isAutoPlayAgain = state
+MacroSection:NewToggle("🔂 Auto Play Again", "คลิกปุ่มให้", function(state)
+    autoPlayAgain = state
 end)
 
--- ⚙️ แท็บ Settings
+-- ⚙️ Settings
 local SettingsTab = Window:NewTab("Settings")
-local SettingsSection = SettingsTab:NewSection("⚙️ Configuration")
-
+local SettingsSection = SettingsTab:NewSection("⚙️ Mode")
 SettingsSection:NewDropdown("Select Mode", "เลือกโหมด", {"Easy", "Normal", "Hard", "Insane"}, function(selected)
-    currentMode = selected
+    print("Selected Mode:", selected)
 end)
 
--- ℹ️ แท็บ About
-local InfoTab = Window:NewTab("About")
-local InfoSection = InfoTab:NewSection("📌 Info")
-InfoSection:NewLabel("สร้างโดยไออ้วง + เค้าเอง 💖")
+-- ℹ️ About
+local AboutTab = Window:NewTab("About")
+local Info = AboutTab:NewSection("📌 Info")
+Info:NewLabel("Macro by ไออ้วง & เค้า 💖")
 
--- 🔐 Toggle UI visibility
-local UIS = game:GetService("UserInputService")
+-- 🎯 Hotkey Toggle UI
+local shown = true
 UIS.InputBegan:Connect(function(input, gp)
     if not gp and input.KeyCode == Enum.KeyCode.RightShift then
-        local main = gethui():FindFirstChild("MainFrame", true)
-        if main then
-            main.Visible = not main.Visible
-        end
+        local gui = gethui():FindFirstChild("MainFrame", true)
+        if gui then gui.Visible = not gui.Visible end
     end
 end)
 
--- 🔁 ทำงานวนระหว่างเล่น
-game:GetService("RunService").RenderStepped:Connect(function()
-    if isRecording then recordMacro() end
-    if isAutoPlayAgain then autoPlayAgain() end
+-- 🔁 วนตลอดระหว่างเล่น
+RS.RenderStepped:Connect(function()
+    if autoPlayAgain then tryPlayAgain() end
 end)
