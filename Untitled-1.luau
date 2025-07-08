@@ -109,9 +109,23 @@ end)
 
 -- ⚙️ Tab: Settings
 Window:NewTab("Settings"):NewSection("🎯 Difficulty")
-	:NewDropdown("Mode", "เลือกระดับเกม", {"Easy", "Normal", "Hard", "Insane"}, function(opt)
+	:NewDropdown("Mode", "เลือกระดับเกม", {"dif_easy", "dif_normal", "dif_hard", "dif_insane"}, function(opt) 
 		currentMode = opt
 		notify("🎯 ตั้งค่าโหมด: " .. opt)
+
+		-- เรียก Remote ทันทีเมื่อเลือก
+		local success, err = pcall(function()
+			game:GetService("ReplicatedStorage")
+				:WaitForChild("RemoteFunctions")
+				:WaitForChild("PlaceDifficultyVote")
+				:InvokeServer(opt)  -- ใช้ opt แทน args
+		end)
+
+		if success then
+			notify("✅ เลือกโหมดสำเร็จ: " .. opt)
+		else
+			notify("⚠️ เลือกโหมดล้มเหลว: " .. tostring(err))
+		end
 	end)
 
 -- 📌 About
