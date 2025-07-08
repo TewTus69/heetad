@@ -11,14 +11,14 @@ end)
 local Library = loadstring(game:HttpGet("https://raw.githubusercontent.com/xHeptc/Kavo-UI-Library/main/source.lua"))()
 local Window = Library.CreateLib("🌊 Macro Controller", "Ocean")
 
--- ⚙️ Service
+-- ⚙️ Services
 local RS = game:GetService("RunService")
 local UIS = game:GetService("UserInputService")
+local Players = game:GetService("Players")
 local Rep = game:GetService("ReplicatedStorage")
 local remotes = Rep:WaitForChild("RemoteFunctions")
-local Players = game:GetService("Players")
 
--- 🪧 Notification UI
+-- 🪧 Notification
 local notification = Instance.new("TextLabel", game:GetService("CoreGui"))
 notification.Size = UDim2.new(0, 320, 0, 40)
 notification.Position = UDim2.new(0.5, -160, 0.05, 0)
@@ -29,8 +29,8 @@ notification.TextSize = 18
 notification.Visible = false
 Instance.new("UICorner", notification)
 
-local function notify(text)
-	notification.Text = text
+local function notify(msg)
+	notification.Text = msg
 	notification.Visible = true
 	task.delay(3, function() notification.Visible = false end)
 end
@@ -61,7 +61,8 @@ hookRemote("SellUnit", function(unitId)
 end)
 
 -- 📂 Main Tab
-local main = Window:NewTab("Main"):NewSection("🎮 Macro")
+local mainTab = Window:NewTab("Main")
+local main = mainTab:NewSection("🎮 Macro")
 
 main:NewButton("⏺️ Start Record", "เริ่มบันทึก", function()
 	macroData, isRecording = {}, true
@@ -110,7 +111,6 @@ Window:NewTab("Settings"):NewSection("🎯 Difficulty")
 	:NewDropdown("Mode", "เลือกระดับ", {"dif_easy", "dif_normal", "dif_hard", "dif_insane"}, function(opt)
 		currentMode = opt:sub(5)
 		notify("🎯 ตั้งค่าโหมด: " .. opt)
-
 		pcall(function()
 			remotes.PlaceDifficultyVote:InvokeServer(opt)
 		end)
@@ -119,7 +119,7 @@ Window:NewTab("Settings"):NewSection("🎯 Difficulty")
 -- 📌 Info
 Window:NewTab("About"):NewSection("👩‍💻 Created by"):NewLabel("ไออ้วง x เค้าเอง 🐬")
 
--- 🔁 Auto Function
+-- 🔁 Loop ตรวจจับ Timeout และ ReFire ไม่สน UUID
 RS.RenderStepped:Connect(function()
 	if autoStart then
 		local ok = pcall(function()
@@ -133,7 +133,6 @@ RS.RenderStepped:Connect(function()
 
 	if autoPlayAgain and tick() - lastRestart > restartCooldown then
 		local guiFound = false
-
 		for _, ui in ipairs(Players.LocalPlayer.PlayerGui:GetDescendants()) do
 			if ui:IsA("TextLabel") and ui.Text then
 				local text = ui.Text:lower()
@@ -168,7 +167,7 @@ RS.RenderStepped:Connect(function()
 	end
 end)
 
--- ⌨️ Toggle UI
+-- ⌨️ RightShift toggle UI
 UIS.InputBegan:Connect(function(input, gp)
 	if not gp and input.KeyCode == Enum.KeyCode.RightShift then
 		Window:Toggle()
